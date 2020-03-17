@@ -22,12 +22,12 @@ if not os.path.exists(exp_number):
 
 def main2(alpha):
 
-    total_objects = 100
-    length_trace = 300000
+    total_objects = 800
+    length_trace = 20000
 
     sc = 1
 
-    obj_dst = obj_size_uniform(1, 200)    
+    obj_dst = obj_size_uniform(1, 1)    
     objects, dst = obj_dst.get_objects(total_objects)
 
     pop = PopularityDst(alpha)
@@ -40,13 +40,12 @@ def main2(alpha):
 #    obj_dst = obj_size_uniform(1, 200)    
 #    objects, dst = obj_dst.get_objects(total_objects)
     
-
     trace = []
     for i in range(length_trace):
         r_o = random.randint(0,total_objects - 1)
         trace.append(r_o)
     
-    trace, sizes, dst, dst_simple, fall_dst = generate_trace3(fd, objects, trace, sds1, sc)
+    trace, sizes, dst, dst_simple, fall_dst,aa,bb,cc = generate_trace3(fd, objects, trace, sds1, sc)
 
     print("len(trace) : ", len(trace))
     

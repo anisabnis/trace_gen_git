@@ -60,10 +60,11 @@ class PopularityDst():
         return trace, self.loc_frac, self.obj_sizes
             
 
-    def getDelta(self, objects):
+    def getDelta(self, objects,min_fd, max_fd):
         probabilities = []
         d_vals = []
-        for d in range(-400, 400):
+
+        for d in range(min_fd, max_fd):
             prob = 0
             for i in range(len(objects)):
                 sz = objects[i]
@@ -75,8 +76,9 @@ class PopularityDst():
             d_vals.append(d)
 
         sum_p = sum(probabilities)
+        print("sum _p ", sum_p)
         probabilities = [float(p)/sum_p for p in probabilities]
-        probabilities = np.cumsum(probabilities)
+        probabilities_sum = np.cumsum(probabilities)
 
-        return probabilities, d_vals
+        return probabilities_sum, d_vals, probabilities
         

@@ -100,6 +100,8 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
 
     fall_count = defaultdict(lambda : defaultdict(lambda : 0))
 
+    samples= defaultdict(lambda :0)
+
     while i < trace_len:
         i += 1
 
@@ -122,7 +124,7 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
 
         try:
             j = trace[i+1:].index(curr_item)
-            j = i + j
+            j = i + j + 1
         except:
             j = len(trace)
             trace.append(curr_item)
@@ -144,7 +146,6 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
             count += 1
             continue
 
-
         o_size = obj_sizes[trace[k]]
         obj_sz_dst[trace[k]] += 1
 
@@ -157,6 +158,7 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
             fall_count[o_size][thr] += 1
 
             z = random.random()
+
             if z > threshold:
                 uniq_bytes = uniq_bytes - o_size
                 k = k - 1
@@ -164,15 +166,15 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
             delta = uniq_bytes - s
             delta_dst[delta] += 1
 
-            if j > k:
-                trace = trace[:j] + trace[j+1:]
+#             if j > k:
+#                 trace = trace[:j] + trace[j+1:]
 
             no_del = 0
             for pos in del_items:
                 trace = trace[:pos-no_del] + trace[pos-no_del+1:]
                 no_del += 1
                 
-            trace.insert(k-no_del, curr_item)
+            trace.insert(k-no_del+1, curr_item)
 
 
     ## This the deltas

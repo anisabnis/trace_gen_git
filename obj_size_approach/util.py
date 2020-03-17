@@ -95,6 +95,7 @@ def generate_trace2(sd, obj_sizes, trace, sds, sc):
     count = 0
     trace_len = len(trace)
 
+
     obj_sz_lst = defaultdict(lambda : 0)
 
     i = 0
@@ -110,6 +111,8 @@ def generate_trace2(sd, obj_sizes, trace, sds, sc):
             uniq_bytes = 0
 
             s = sample_fd(sd, sds) * sc
+
+            samples[s] += 1
 
             j = trace[i+1:].index(curr_item)
             j = i + j
@@ -144,7 +147,7 @@ def generate_trace2(sd, obj_sizes, trace, sds, sc):
             count += 1
             
         if success == True:
-            threshold = float(uniq_bytes - s)/o_size
+            threshold = 1 - float(uniq_bytes - s)/o_size
             z = random.random()
             if z > threshold:
                 k = k - 1
@@ -168,6 +171,8 @@ def generate_trace2(sd, obj_sizes, trace, sds, sc):
     dst = [float(x)/sum_counts for x in counts]
     dst = np.cumsum(dst)
 
+
+
     print("HH: ", count)
     return trace, sizes, dst
 
@@ -176,11 +181,14 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
     
     count = 0
     trace_len = len(trace)    
-    obj_sz_lst = defaultdict(lambda : 0)
+    delta_dst = defaultdict(lambda : 0)
+    obj_sz_dst = defaultdict(lambda : 0)
+
     i = 0
+
     fall_count = defaultdict(lambda : defaultdict(lambda : 0))
 
-
+    samples= defaultdict(lambda :0)
     while i < trace_len:
         i += 1
 
@@ -191,19 +199,21 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
             print("generate trace : ", i)
 
         curr_item = trace[i]
+        #print("curr_item : ", curr_item)
 
         uniq_ele = set()
         uniq_bytes = 0
 
         s = sample_fd(sd, sds) * sc
                 
+        samples[s] += 1
         success = False
         
         del_items = []
 
         try:
             j = trace[i+1:].index(curr_item)
-            j = i + j
+            j = i + j + 1
         except:
             j = len(trace)
             trace.append(curr_item)
@@ -227,11 +237,11 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
 
 
         o_size = obj_sizes[trace[k]]
-        obj_sz_lst[trace[k]] += 1
+        obj_sz_dst[trace[k]] += 1
 
         if success == True:
 
-            threshold = float(uniq_bytes - s)/o_size
+            threshold = 1 - float(uniq_bytes - s)/o_size
             thr = np.round(threshold, 2)
             thr = 1 - thr
 
@@ -241,31 +251,48 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
             if z > threshold:
                 uniq_bytes = uniq_bytes - o_size
                 k = k - 1
-            
-            if j > k:
-                trace = trace[:j] + trace[j+1:]
+
+            delta = uniq_bytes - s
+            delta_dst[delta] += 1
+
+            #print("s : ", s, "r : ", uniq_bytes)
+
+#             if j > k:
+#                trace = trace[:j] + trace[j+1:]
 
             no_del = 0
             for pos in del_items:
+#                print("Deleting : ", trace[pos-no_del])
                 trace = trace[:pos-no_del] + trace[pos-no_del+1:]
                 no_del += 1
                 
-            trace.insert(k-no_del, curr_item)
+            trace.insert(k-no_del+1, curr_item)
 
-    sizes = list(obj_sz_lst.keys())
-    sizes.sort()
 
+    ## This the deltas
+    deltas = list(delta_dst.keys())
+    deltas.sort()
     counts = []
-    for sz in sizes:
-        counts.append(obj_sz_lst[sz])
-    
+    for d in deltas:
+        counts.append(delta_dst[d])
     sum_counts = sum(counts)
     dst = [float(x)/sum_counts for x in counts]
-    dst_cpy = copy.deepcopy(dst)
-
     dst = np.cumsum(dst)
 
-    return trace, sizes, dst, dst_cpy, fall_count
+    ## Repeat for size
+    sizes = list(obj_sz_dst.keys())
+    sizes.sort()
+    counts = []
+    for s in sizes:
+        counts.append(obj_sz_dst[s])
+    sum_counts = sum(counts)
+    dst1 = [float(x)/sum_counts for x in counts]
+    dst_simple = copy.deepcopy(dst1)
+    dst1 = np.cumsum(dst1)
+
+
+    return trace, deltas, dst, sizes, dst_simple, sizes, dst1, fall_count
+
 
 
 
