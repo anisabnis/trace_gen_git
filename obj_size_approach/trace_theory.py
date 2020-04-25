@@ -12,8 +12,9 @@ from util_theory import *
 import numpy as np
 import scipy
 from scipy.optimize import linprog
+from scipy import linalg
 import os
-
+from scipy.linalg import toeplitz
 
 exp_number = sys.argv[1]
 
@@ -23,11 +24,12 @@ if not os.path.exists(exp_number):
 
 def main2(alpha):
 
-    total_objects = 6000
-    length_trace = 80000
+    total_objects = 300
+    length_trace = 10000
+    max_obj_sz = 600
 
     sc = 1
-    obj_dst = obj_size_uniform(1, 10000)    
+    obj_dst = obj_size_uniform(1, max_obj_sz)    
     objects, dst = obj_dst.get_objects(total_objects)
 
     pop = PopularityDst(alpha)
@@ -45,9 +47,9 @@ def main2(alpha):
     ###############################################
 
     sc = 1
-    obj_dst = obj_size_uniform(1, 10000)    
+    obj_dst = obj_size_uniform(1, max_obj_sz)    
     objects, dst = obj_dst.get_objects(total_objects)
-    t_delta, t_vals, t_delta_pdf = pop.getDelta(objects, -10000, 10000) 
+    t_delta, t_vals, t_delta_pdf = pop.getDelta(objects, -1 * max_obj_sz, max_obj_sz) 
 
     print("generating a new trace")
     #trace, loc_frac1, object_sizes1 = pop.get_trace(objects, length_trace)    
@@ -61,16 +63,47 @@ def main2(alpha):
     #plt.legend()
     #plt.savefig(exp_number + "/NoiseError.png")
     plt.clf()
-    
 
     print("t_delta L", len(t_delta_pdf), len(sfd1))
-    t_delta_pdf = np.concatenate((t_delta_pdf, [0] * (len(sfd1) - len(t_delta))), axis=0)
+
+    
+    #t_delta_pdf = np.concatenate((t_delta_pdf, [0] * (len(sfd1) - len(t_delta))), axis=0)
+    #t_delta_pdf = t_delta_pdf + [0]*(len(sfd1) - len(t_delta_pdf))
+
+
+    t_delta_1 = t_delta_pdf[:int(len(t_delta_pdf)/2)+1]
+    t_delta_1.reverse()
+    t_delta_1 = t_delta_1 + [0] * (len(sfd1) - len(t_delta_1))
+    
+    t_delta_2 = t_delta_pdf[int(len(t_delta_pdf)/2):]   
+    t_delta_2 = t_delta_2 + [0] * (len(sfd1) - len(t_delta_2))
+
+    print("t_delta_pdf : ", len(t_delta_pdf))
+
+    print("t_Delta 1 : ", t_delta_1)
+
+    print("t_Delta 2 : ", t_delta_2)
+
+    Q = toeplitz(t_delta_1, t_delta_2)
+    #Q = Q[1:-5, 1:-5]
+
+    t_delta_new = [0] * len(t_delta_pdf) + t_delta_pdf + [0] * len(t_delta_pdf)
+    print(len(sds1))
+#     Q = linalg.toeplitz(t_delta_new)
+#     Q = Q[:len(t_delta_pdf)]
+#     Q = Q[:, len(t_delta_pdf):(2*len(t_delta_pdf))]
+
+    det = np.linalg.matrix_rank(Q)
+    f = open("det1.txt", "w")
+    f.write("toeplitz done")
+    f.flush()
+    #det = np.linalg.det(Q)
+    
+    f.write(str(det))
+    f.flush()
+    f.close()
 
     ## First try the matrix multiplication method
-    
-
-
-
 
 #     k = np.fft.fft(sfd1)/np.fft.fft(t_delta_pdf)
 #     print("Third : ", k)

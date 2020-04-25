@@ -171,9 +171,6 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
             delta = uniq_bytes - s
             delta_dst[delta] += 1
 
-#             if j > k:
-#                 trace = trace[:j] + trace[j+1:]
-
             no_del = 0
             for pos in del_items:
                 trace = trace[:pos-no_del] + trace[pos-no_del+1:]

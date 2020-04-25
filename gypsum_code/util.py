@@ -1,15 +1,13 @@
 import numpy as np
 from collections import defaultdict
-import matplotlib.pyplot as plt
 import random
 import copy
 
-def gen_fd(trace, sizes, label, sc):
+def gen_fd(trace, sizes, sc):
+
+    ## Replace this n^2 algorithm later.
     fd_d = defaultdict(lambda : 0)
-
     counter = 0
-
-    sc = 100
     for i in range(len(trace)):        
         if i%1000 == 0:
             print("generating fd : ", i)
@@ -21,7 +19,6 @@ def gen_fd(trace, sizes, label, sc):
 
         for k in range(i + 1, len(trace)):
             if trace[k] == curr_item:
-                #uniq_bytes += sizes[curr_item]
                 success = True
                 break
             else:
@@ -43,38 +40,15 @@ def gen_fd(trace, sizes, label, sc):
     counts = []
     for k in ks:
         counts.append(fd_d[k])
-
-    #ks = [sc * k for k in ks]
-        
     sum_counts = sum(counts)
-    counts = [float(x)/sum_counts for x in counts]
-    
-    s_counts = copy.deepcopy(counts)
-    
+    counts = [float(x)/sum_counts for x in counts]    
+    s_counts = copy.deepcopy(counts)    
     counts = np.cumsum(counts)
-    
-    #plt.plot(ks, counts, label=label)
-   # plt.savefig("fd.png")
-
-    print("counter : ", counter)
     return counts, s_counts, ks
-    
 
-def gen_step_fd():
-    ks = []
-    counts = []
-    for i in range(1,11):
-        ks.append(2000*i)
-        counts.append(0.1)
 
-    sum_counts = sum(counts)
-    counts = [float(c)/sum_counts for c in counts]
-    s_counts = copy.deepcopy(counts)
-    counts = np.cumsum(counts)
-    #plt.plot(ks, counts, label="original")
 
-    return counts, s_counts, ks
-        
+
 
 def sample_fd(sds_prob, sds):
     z = np.random.random()
@@ -89,19 +63,15 @@ def sample_fd(sds_prob, sds):
     return obj
 
 
-def generate_trace3(sd, obj_sizes, trace, sds, sc):
+def generate_trace3(sd, sds, obj_sizes, trace):
     
     count = 0
     trace_len = len(trace)    
     delta_dst = defaultdict(lambda : 0)
     obj_sz_dst = defaultdict(lambda : 0)
 
-    print("SC : ", sc)
-
     i = 0
-
     fall_count = defaultdict(lambda : defaultdict(lambda : 0))
-
     samples= defaultdict(lambda :0)
 
     while i < trace_len:
@@ -118,9 +88,7 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
         uniq_ele = set()
         uniq_bytes = 0
 
-        s = sample_fd(sd, sds) * sc
-
-        #print("sample : ", s)
+        s = sample_fd(sd, sds)
                 
         success = False
         
@@ -132,7 +100,6 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
         except:
             j = len(trace)
             trace.append(curr_item)
-            #continue
 
         for k in range(i+1, len(trace)):
 
@@ -171,9 +138,6 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
             delta = uniq_bytes - s
             delta_dst[delta] += 1
 
-#             if j > k:
-#                 trace = trace[:j] + trace[j+1:]
-
             no_del = 0
             for pos in del_items:
                 trace = trace[:pos-no_del] + trace[pos-no_del+1:]
@@ -203,4 +167,5 @@ def generate_trace3(sd, obj_sizes, trace, sds, sc):
     dst_simple = copy.deepcopy(dst1)
     dst1 = np.cumsum(dst1)
 
-    return trace, deltas, dst, sizes, dst_simple, sizes, dst1, fall_count
+    return trace, deltas, dst, sizes, dst_simple, dst1, fall_count
+

@@ -51,10 +51,10 @@ class PopularityDst():
         return obj
 
 
-    def get_trace(self, objects, len):
+    def get_trace(self, objects, lent):
         loc_frac = self.assignPopularities(objects)
         trace = []
-        for i in range(len):
+        for i in range(len(objects)):
             req = self.sample()
             trace.append(req)
         return trace, self.loc_frac, self.obj_sizes
