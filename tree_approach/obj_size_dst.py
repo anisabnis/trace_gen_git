@@ -36,6 +36,3 @@ class obj_size:
         for i in range(no_objects):
             sz = self.sample()
             self.objects.append(sz)
-
-
-
