@@ -32,7 +32,7 @@ def main2(alpha):
 
     total_objects = 10000
     length_trace = int(sys.argv[2])
-    max_obj_sz = 15000
+    max_obj_sz = 600
 
     sc = 1
     #obj_dst = obj_size_uniform(1, max_obj_sz)    

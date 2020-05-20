@@ -14,7 +14,7 @@ class obj_size:
 
         for k in self.sz_dst:
             k1 = int(k.decode())
-            k1 = k1/30000000
+            k1 = k1/1000000
             self.n_sz_dst[k1] += int(self.sz_dst[k])
 
         self.obj_sizes = list(self.n_sz_dst.keys())

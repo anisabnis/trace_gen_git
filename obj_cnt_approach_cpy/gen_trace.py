@@ -23,8 +23,9 @@ def gen_leaves(trace, sizes):
 
         trace_list.append(n)
 
-        if i % 10000 == 0:
-            print("leaves processed : ", i)
+
+    if i%10000 == 0:
+        print("Parsed number of requests : ", i)
 
     return trace_list
 
@@ -55,7 +56,7 @@ def generate_tree(trace_list):
             st_tree[lvl+1].append(p_n)
 
             if i%10000 == 0:
-                print("nodes processed : ", i)
+                print("Parsed number of nodes : ", i)
 
         lvl += 1
 

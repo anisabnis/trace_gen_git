@@ -63,7 +63,7 @@ def main2(alpha):
     t_delta_2 = t_delta_pdf[int(len(t_delta_pdf)/2):]   
     t_delta_2 = t_delta_2 + [0] * (len(sfd1) - len(t_delta_2))
 
-    Q = toeplitz(t_delta_1, t_delta_2)
+#    Q = toeplitz(t_delta_1, t_delta_2)
 #     last_row = Q[-1]
 #     iter = int(len(t_delta_pdf)/2)
 #     Q_ = []
@@ -79,25 +79,25 @@ def main2(alpha):
 #     Q_ = np.array(Q_)
 #     Q = np.vstack((Q, Q_))
 
-    print("built Q")
-    #X = nnls(Q, sfd1)[0]
+#     print("built Q")
+#     #X = nnls(Q, sfd1)[0]
 
-    print("shapes : ", Q.shape, len(sfd1))
+#     print("shapes : ", Q.shape, len(sfd1))
     
-    X = nnls(Q, sfd1)
-    obj = X[1]
-    X = X[0]
-    print("objective : ", sum(X), len(X), obj)
-    for x in X:
-        print(x)
-    sum_x = sum(X)
+#     X = nnls(Q, sfd1)
+#     obj = X[1]
+#     X = X[0]
+#     print("objective : ", sum(X), len(X), obj)
+#     for x in X:
+#         print(x)
+#     sum_x = sum(X)
 
-    X = [float(x)/sum_x for x in X]
-    X = np.cumsum(X)
+#     X = [float(x)/sum_x for x in X]
+#     X = np.cumsum(X)
 
-    plt.plot(sds1, X, label="X")
-    plt.plot(sds1, fd, label="orig")
-    plt.plot(sds2, fd2, label="alg")
+#     plt.plot(sds1, X, label="X")
+#     plt.plot(sds1, fd, label="orig")
+#     plt.plot(sds2, fd2, label="alg")
 
 #     res = np.dot(Q, X)
 #     print("lengths")
@@ -109,9 +109,9 @@ def main2(alpha):
 #     print("sum_x : ", sum(X))
 
 #     X = np.cumsum(X)    
-    trace, loc_frac1, object_sizes1 = pop.get_trace(objects, length_trace)    
-    trace, p_vals, p_delta, sizes, dst_simple, s_vals, s_dst, fall_dst = generate_trace3(X, objects, trace, sds1, sc)
-    fd3, sfd3, sds3 = gen_fd(trace, objects, "fd2", sc)
+#     trace, loc_frac1, object_sizes1 = pop.get_trace(objects, length_trace)    
+#     trace, p_vals, p_delta, sizes, dst_simple, s_vals, s_dst, fall_dst = generate_trace3(X, objects, trace, sds1, sc)
+#     fd3, sfd3, sds3 = gen_fd(trace, objects, "fd2", sc)
 
 #     X = np.cumsum(X)
 
@@ -126,7 +126,7 @@ def main2(alpha):
 
 #     plt.plot(sds1, r_fd[:len(sds1)], label="pred")
 #     plt.plot(sds1[:len(X)], X, label="Sample")
-    plt.plot(sds3, fd3, label="fft")
+#    plt.plot(sds3, fd3, label="fft")
     
     plt.legend()
     plt.savefig(exp_number + "/Fd_compare.png")

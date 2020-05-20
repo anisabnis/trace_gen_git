@@ -1,5 +1,6 @@
 import numpy as np
 from collections import defaultdict
+import matplotlib.pyplot as plt
 
 class FD:
     def __init__(self, dir, fd_file):
@@ -26,6 +27,9 @@ class FD:
 
         self.sds = sds
         self.sds_pr = sds_pr
+
+        plt.plot(self.sds, self.sds_pr)
+
 
     def sample(self):
         z = np.random.random()

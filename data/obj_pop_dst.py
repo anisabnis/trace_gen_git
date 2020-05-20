@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import json
 
 class obj_pop:
@@ -17,10 +18,13 @@ class obj_pop:
             
         sum_pr = sum(pop_prs)
         pop_prs = [float(p)/sum_pr for p in pop_prs]
-        pop_prs = np.cumsum(pop_prs)
+        self.pop_prs = np.cumsum(pop_prs)
 
         self.pops = pops
-        self.pop_prs = np.cumsum(pop_prs)
+        self.pops = [int(p)/100 for p in self.pops]
+        #self.pop_prs = np.cumsum(pop_prs)
+
+        plt.plot(self.pops, self.pop_prs)
 
     def sample(self):
         z = np.random.random()

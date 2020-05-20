@@ -15,7 +15,7 @@ class obj_size:
 
         req_sizes = defaultdict(int)
         for s in sizes:
-            sz = int(s)
+            sz = int(s)/10**3
             s = unicode(str(s), "utf-8")
             count = size_dst[s]
             req_sizes[sz] += count

@@ -34,6 +34,8 @@ def gen_sd_dst(trace, sizes, scale, stop):
     root = st_tree[lvl][0]
     curr = st_tree[0][0]
 
+    print("Root.s in the generated trace : ", root.s)
+
     fd = defaultdict(int)
 
     i = 0
@@ -54,7 +56,6 @@ def gen_sd_dst(trace, sizes, scale, stop):
             while p != None:
                 p.s += add_val
                 p = p.parent
-
         
         ## delete curr and reduce the tree value
         next_node = curr.findNext() 
@@ -63,7 +64,7 @@ def gen_sd_dst(trace, sizes, scale, stop):
         curr = next_node
         i += 1
 
-        if i%1000 == 0:
+        if i%50000 == 0:
             print("iter : ", i)
 
         if i > stop:

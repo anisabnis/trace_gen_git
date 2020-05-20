@@ -63,7 +63,7 @@ def gen_sd_dst(trace, sizes, scale, stop):
         curr = next_node
         i += 1
 
-        if i%1000 == 0:
+        if i%10000 == 0:
             print("iter : ", i)
 
         if i > stop:

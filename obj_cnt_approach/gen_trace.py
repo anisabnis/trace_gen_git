@@ -23,9 +23,6 @@ def gen_leaves(trace, sizes):
 
         trace_list.append(n)
 
-        if i % 10000 == 0:
-            print("leaves processed : ", i)
-
     return trace_list
 
 
@@ -53,9 +50,6 @@ def generate_tree(trace_list):
             p_n.set_b()        
 
             st_tree[lvl+1].append(p_n)
-
-            if i%10000 == 0:
-                print("nodes processed : ", i)
 
         lvl += 1
 

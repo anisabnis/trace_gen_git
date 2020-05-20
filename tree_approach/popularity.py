@@ -58,18 +58,9 @@ class PopularityDst():
         
 
     def get_trace(self, objects, t_len):
-        # loc_frac = self.assignPopularities(objects)
-#         trace = []
-#         for i in range(len):
-#             req = self.sample()
-#             trace.append(req)
-
-        #vals = range(len(objects))
-        #trace = np.random.choice(vals, t_len, p=self.pop).tolist()
-        #return trace
-            
         vals = range(len(objects))
         return vals
+
 
     def getDelta(self, objects,min_fd, max_fd, scale):
         probabilities = []

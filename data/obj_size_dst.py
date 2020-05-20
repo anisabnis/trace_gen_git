@@ -1,7 +1,7 @@
 import numpy as np
 import json
 from collections import defaultdict
-from util import *
+#from util import *
 import matplotlib.pyplot as plt
 
 class obj_size:
@@ -36,6 +36,7 @@ class obj_size:
         self.sizes = sizes
 
         plt.plot(self.sizes, self.size_prs, label="distribution")
+        plt.xlabel("size in kb")
 
     def get_objects(self, no_objects):
         return np.random.choice(self.sizes, no_objects, p=self.size_dst)
