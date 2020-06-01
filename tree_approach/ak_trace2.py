@@ -38,7 +38,7 @@ if __name__ == "__main__":
     print("Time now is : ", datetime.datetime.now())        
 
     ## Get the Footprint descriptor
-    fd = FD("./", "sfd_bytes.txt")
+    fd = FD("./", "sfd_bytes.txt", 550733704000)
     print("Parsed footprint descriptor")
     print("Time now is : ", datetime.datetime.now())
 
@@ -159,9 +159,15 @@ if __name__ == "__main__":
 
     print("Length of c trace finally : ", len(c_trace))
 
-    fd2, sfd2, sds2 = gen_sd_dst(c_trace, sizes, sc, t_len)#len_c_trace)
+    fd2, sfd2, sds2, max_sd = gen_sd_dst(c_trace, sizes, sc, t_len)#len_c_trace)
 
-    plot_list(sampled_fds)
+    print("Size of root : ", max_sd)
+
+    fd = FD("./", "sfd_bytes.txt", max_sd * 1000)
+
+    #plot_list(sampled_fds)
+    fd_sds = [int(x)/(1000) for x in fd.sds]
+    plt.plot(fd_sds, fd.sds_pr, label="orig_fd")
     plt.plot(sds2, fd2, label="alg")
     plt.grid()
     plt.legend()

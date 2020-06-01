@@ -2,7 +2,7 @@ import numpy as np
 from collections import defaultdict
 
 class FD:
-    def __init__(self, dir, fd_file):
+    def __init__(self, dir, fd_file, lim):
         f = open(dir + "/" + fd_file, "r")
         f.readline()
         sd = defaultdict(int)
@@ -11,6 +11,10 @@ class FD:
             pr = float(l[1])
             s = int(l[0])
             sd[s] += pr
+            
+            if s > lim:
+                break
+
 
         sds = list(sd.keys())
         sds.sort()

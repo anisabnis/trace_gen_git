@@ -32,10 +32,13 @@ def gen_sd_dst(trace, sizes, scale, stop):
     st_tree, lvl = generate_tree(trace_list)
 
     root = st_tree[lvl][0]
+    root_s = root.s
     curr = st_tree[0][0]
 
     fd = defaultdict(int)
 
+    max_sd = 0
+    
     i = 0
     while curr != None:
 
@@ -48,6 +51,9 @@ def gen_sd_dst(trace, sizes, scale, stop):
             fd[(int(uniq_bytes)/scale) * scale] += 1
             curr_next.set_b()
             
+            if uniq_bytes > max_sd:
+                max_sd = uniq_bytes
+
             p = curr_next.parent
             add_val = curr_next.s * curr_next.b
 
@@ -78,7 +84,7 @@ def gen_sd_dst(trace, sizes, scale, stop):
     vals = [float(x)/sum_vals for x in vals]
     vals_cdf = np.cumsum(vals)
 
-    return vals_cdf, vals, uniq_keys
+    return vals_cdf, vals, uniq_keys, max_sd
 
         
     
