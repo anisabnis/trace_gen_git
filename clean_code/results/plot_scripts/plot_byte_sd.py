@@ -13,8 +13,8 @@ for l in f:
     l = l.strip().split(" ")
     fds.append(int(l[0]))
     prs.append(float(l[1]))
-fds = fds[:25000]
-prs = prs[:25000]
+fds = fds[:500000]
+prs = prs[:500000]
 
 f.close()
 
@@ -38,8 +38,8 @@ sum_sd_vals = sum(sd_vals)
 sd_vals = [float(x)/sum_sd_vals for x in sd_vals]
 sd_vals = np.cumsum(sd_vals)
 
-sd_keys = sd_keys[:25000]
-sd_vals = sd_vals[:25000]
+sd_keys = sd_keys[:500000]
+sd_vals = sd_vals[:500000]
 
 plt.plot(fds, prs, label="alg", linestyle="-")
 plt.plot(sd_keys, sd_vals, label="orig", linestyle="--")

@@ -48,7 +48,7 @@ def gen_sd_dst(trace, sizes, scale, stop, log_file):
         if curr_next == None:
             pass
         else:
-            uniq_bytes = curr.findUniqBytes(curr_next) + curr.s
+            uniq_bytes = curr.findUniqBytes(curr_next, log_file) + curr.s
             fd[(int(uniq_bytes)/scale) * scale] += 1
             curr_next.set_b()
             
@@ -65,13 +65,14 @@ def gen_sd_dst(trace, sizes, scale, stop, log_file):
         ## delete curr and reduce the tree value
         next_node = curr.findNext() 
         next_node = next_node[0]
-        curr.delete_node()
+        curr.delete_node(log_file)
         curr = next_node
         i += 1
 
         if i%50000 == 0:
             log_file.write("iter : " + str(i) + "\n")
             log_file.flush()
+            print("iter : " + str(i))
 
         if i > stop:
             break

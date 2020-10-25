@@ -6,6 +6,7 @@ class FD:
         f = open(dir + "/" + fd_file, "r")
         f.readline()
         sd = defaultdict(int)
+
         for l in f:
             l = l.strip().split(" ")
             pr = float(l[1])

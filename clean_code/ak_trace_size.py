@@ -88,7 +88,6 @@ if __name__ == "__main__":
         if pp > 1:
             sd = fd_sample.sample(pp)
             sd = int(float(sd)/1000)
-            sampled_fds.append(sd)
             sampled_sds_pop[pp].append(sd)
         else:
             sd = 0
@@ -97,6 +96,8 @@ if __name__ == "__main__":
         if sd >= root.s:
             fail += 1
             continue
+
+        sampled_fds.append(sd)
 
         n  = node(curr.obj_id, curr.s)        
         n.set_b()
@@ -118,16 +119,16 @@ if __name__ == "__main__":
             object_landed_on.append(o_id)
             descs[descrepency] += 1
 
-            if n.parent != None :
-                n.parent.rebalance()
+            #if n.parent != None :
+            #    n.parent.rebalance()
         else:            
             n = node(total_objects, sizes[total_objects])
             req_count[total_objects] = 0
             total_objects += 1
             n.set_b()
             descrepency, x, y = root.insertAt(root.s - 1, n, 0, curr.id)
-            if n.parent != None:
-                n.parent.rebalance()
+            #if n.parent != None:
+            #    n.parent.rebalance()
                
         next, success = curr.findNext()
         while (next != None and next.b == 0) or success == -1:

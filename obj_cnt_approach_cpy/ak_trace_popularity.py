@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     ## get the footprint descriptor
     print("start : ", datetime.datetime.now())
-    fd = FD("./", "sfd.txt", 131072)
+    fd = FD("./", "sfd.txt", no_objects)
     print("parsed footprint descriptor at : ", datetime.datetime.now())
 
     ## create n objects and set size to 1
@@ -35,11 +35,14 @@ if __name__ == "__main__":
     req_count = [0] * (20*no_objects)
 
     ## Assign popularities to each object
-    #
+    #joint_dst = pop("joint_dst.txt")
     joint_dst = pop("joint_dst.txt")
-    popularities = joint_dst.sample_popularities(no_objects)
-    popularities = np.append(popularities, [1] * (20*no_objects))
-    #popularities = [float(1)/(p) for p in popularities]
+    popularities = joint_dst.sample_popularities(no_objects * 15)
+    #popularities = np.append(popularities, [1] * (5*no_objects))
+    
+    #popularities = [float(1)/(p) for p in popularities]    
+
+    fd_sample = pop_sz_dst("fd_popularity.txt", "pop") 
 
     f = open("sampled_popularities_" + str(del_rate) + ".txt", "w")
     f.write(",".join([str(x) for x in popularities]))
@@ -48,10 +51,6 @@ if __name__ == "__main__":
     ## generate random trace
     trace = range(no_objects)
     curr_max_seen = 0
-
-    ## sample fds
-    sampled_fds = np.random.choice(fd.sds, 1.4 * t_len, p=fd.sds_pdf)
-    sampled_fds = [int(x)/scale_down for x in sampled_fds]
 
     ## create a tree structure using the initial tree
     trace_list = gen_leaves(trace, sizes)
@@ -69,17 +68,25 @@ if __name__ == "__main__":
     j = 0
     no_desc = 0
     fail = 0
+    sampled_fds = []
 
-    while curr != None and i <= 1.4*t_len:
+    sampled_sds_pop = defaultdict(list)
 
-        try:
-            sd = sampled_fds[j]
-            j += 1
-            if sd >= root.s:
-                fail += 1
-                continue
-        except:
-            break
+    while curr != None and i <= 1.4 * t_len:
+
+        pp = popularities[i]            
+        if pp > 1:
+            #pp_ = float(pp - 1)/t_len
+            sd = fd_sample.sample(pp)
+            sampled_fds.append(sd)
+            sampled_sds_pop[pp].append(sd)
+        else:
+            sd = 0
+
+        j += 1
+        if sd >= root.s:
+            fail += 1
+            continue
 
         n  = node(curr.obj_id, curr.s)        
         n.set_b()
@@ -90,19 +97,16 @@ if __name__ == "__main__":
 
         req_count[curr.obj_id] += 1
         end_object = False
-        #if np.random.random() < popularities[curr.obj_id]:
 
-        #if req_count[curr.obj_id] >= popularities[curr.obj_id]:
-        if np.random.random() < del_rate:
+        #if np.random.random() < popularities[curr.obj_id]:
+        if req_count[curr.obj_id] >= popularities[curr.obj_id]:
             end_object = True
         
         if end_object == False:
             descrepency = root.insertAt(sd, n, 0, curr.id)                
-
             if n.parent != None :
                 n.parent.rebalance()
         else:            
-            #if i < 1.2 * t_len:
             n = node(total_objects, 1)
             req_count[total_objects] = 1
             total_objects += 1
@@ -123,36 +127,42 @@ if __name__ == "__main__":
         curr = next
         i += 1
 
-    len_c_trace = len(c_trace)
-    print("len trace : ", len_c_trace)
+#     len_c_trace = len(c_trace)
 
-#     f = open("req_count_" + str(del_rate) + ".txt", "w")
-#     req_count = req_count[:curr_max_seen]
-#     f.write(",".join([str(x) for x in req_count]))
-#     f.close()
-        
-    if len_c_trace < t_len :
-        n_power_2 = np.power(2, np.ceil(math.log(len(c_trace), 2)))
-        to_fill = n_power_2 - len_c_trace
-        sub_trace = pop.get_trace1(sizes, to_fill)
-        c_trace = c_trace + sub_trace
-    else:
-        n_power_2 = int(np.power(2, np.floor(math.log(len(c_trace), 2))))
-        c_trace = c_trace[:n_power_2]
+#     print("len trace : ", len_c_trace)
 
+#     if len_c_trace < t_len :
+#         n_power_2 = np.power(2, np.ceil(math.log(len(c_trace), 2)))
+#         to_fill = n_power_2 - len_c_trace
+#         sub_trace = pop.get_trace1(sizes, to_fill)
+#         c_trace = c_trace + sub_trace
+#     else:
+#         n_power_2 = int(np.power(2, np.floor(math.log(len(c_trace), 2))))
+#         c_trace = c_trace[:n_power_2]
+
+    i = 0
+    for key in sampled_sds_pop:
+        vals = sampled_sds_pop[key]
+        plt.clf()
+        plot_list(vals)
+        plt.grid()
+        plt.savefig("diag/" + str(key) + ".png")
+        i += 1
+        if i %300== 0:
+            print("i : ", i)
+
+    plt.clf()
+    plot_list(sampled_fds)
+    plt.grid()
+    plt.savefig("sampled_fds.png")
+
+    f = open("req_count_" + str(del_rate) + ".txt", "w")
+    f.write(",".join([str(x) for x in req_count]))
+    f.close()
 
     f = open("out_trace_" + str(del_rate) + ".txt", "w")
     f.write(",".join([str(x) for x in c_trace]))
     f.close()
-
-#     ## plot_the uniq bytes distribution
-#     fd2, sfd2, sds2 = gen_sd_dst(c_trace, sizes, sc, t_len)
-#     plt.plot(sds2, fd2, label="alg")    
-#     plt.plot(fd.sds, fd.sds_pr, label="orig_fd")
-#     plt.grid()
-#     plt.legend()
-#     plt.savefig("sd_uniq_bytes_"+ str(del_rate) + ".png")
-#     plt.clf()
 
     i = 0
     popularity = defaultdict(int)
@@ -163,7 +173,7 @@ if __name__ == "__main__":
             print("Parsed trace : ", i)
 
     ## This code writes the popularity of each object onto disk! Just plot it later
-    f = open("popularities_trace_" + str(del_rate) + "_.txt" , "w")
+    f = open("popularities_trace_" + str(del_rate) + ".txt" , "w")
     i = 0
     len_ctrace = len(c_trace)
     for o in popularity:
@@ -172,17 +182,23 @@ if __name__ == "__main__":
         i += 1
         if i % 10000 == 0:
             print("assigned popularities : ", i)
+
     f.close()
+    plt.clf()
+    plot_dict(popularity)
+    plt.grid()
+    plt.savefig("popularity_resulting_" + str(del_rate) + ".png")
+    plt.clf()
 
     #Assign size to an object based on its popularity
-    sz  = obj_size("./", "subtrace.txt.sizeCntObj.json")
-    sizes = sz.get_objects(20 * no_objects)
-#     joint_dst = pop_sz_dst("joint_dst.txt")
-#     objects = list(popularity.keys())
-#     objects.sort()
-#     sizes = defaultdict(lambda : 1)
-#     for o in objects:
-#         sizes[o] = joint_dst.sample(popularity[o])
+    #sz  = obj_size("./", "subtrace.txt.sizeCntObj.json")
+    #sizes = sz.get_objects(20 * no_objects)
+    joint_dst = pop_sz_dst("joint_dst.txt")
+    objects = list(popularity.keys())
+    objects.sort()
+    sizes = defaultdict(lambda : 1)
+    for o in objects:
+        sizes[o] = joint_dst.sample(popularity[o])
 
     # Writes the sizes of each object onto disk! Jut plot it later
     f = open("sampled_sizes_" + str(del_rate) + ".txt" ,"w")
@@ -195,7 +211,6 @@ if __name__ == "__main__":
         
     # sd with bytes
     fd = FD("./", "sfd_bytes.txt", max_sd * 1000)    
-
     
     ## write the resultant stack distance onto file
     f = open("res_fd_" + str(del_rate) + ".txt", "w")

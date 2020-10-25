@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import bisect
 
 class pop_sz_dst:
-    def __init__(self, i_file):
+    def __init__(self, i_file, arg="size"):
         pop_sz = defaultdict(lambda : defaultdict(int))        
 
         f = open(i_file, "r") 
@@ -15,17 +15,19 @@ class pop_sz_dst:
         sum_pop = 0
         total_obj = 0
         overall_sz_dst = defaultdict(int)
-        
+
+        keys_cnt = 0
         for l in f:
             l = l.strip().split(" ")
 
             if len(l) == 1:
                 key = int(l[0])
                 sum_pop += key
+                keys_cnt += 1
                 continue
 
             sz = int(l[0]) + 1
-            objs = int(l[1])
+            objs = float(l[1])
             pop_sz[key][sz] += objs
             total_obj += objs
 
@@ -33,8 +35,10 @@ class pop_sz_dst:
 
         f.close()
 
-        print("t objects : ", total_obj)
+        pop_sz[0][1] = 1.0
 
+        print("t objects : ", total_obj, keys_cnt, sum_pop)
+        
         self.pop_sz_vals = defaultdict(lambda : list)
         self.pop_sz_prs = defaultdict(lambda : list)
 
@@ -42,16 +46,15 @@ class pop_sz_dst:
 
         for key in pop_sz:
             sizes = list(pop_sz[key].keys())
-            #sizes.sort()            
-            n_key = float(key)/sum_pop
+            n_key = key
+            if arg == "size":
+                n_key = float(key)/sum_pop
             self.pop_sz_vals[n_key] = sizes
             sum_n_key += n_key
             prs = []
-
             for s in sizes:
                 prs.append(pop_sz[key][s])
             sum_prs = sum(prs)
-
             prs = [float(x)/sum_prs for x in prs]
             self.pop_sz_prs[n_key] = prs
 
@@ -69,7 +72,7 @@ class pop_sz_dst:
         
         plt.plot(szs, counts)
         plt.grid()
-        plt.savefig("overall_size_dst.png")
+        plt.savefig("overall_" + arg + "_dst.png")
         plt.clf()
 
     def sample_each_popularity(self):
@@ -82,6 +85,19 @@ class pop_sz_dst:
         self.popularities = list(self.pop_sz_prs.keys())
         self.popularities.sort()
         print(self.popularities[0], self.popularities[-1])
+
+        to_plot = np.cumsum(self.popularities)
+        plt.clf()
+        plt.plot(to_plot)
+        plt.grid()
+        plt.savefig("pop_dst.png")
+        plt.clf()
+
+        i = 0
+        for k in self.pop_sz_prs:
+            print("k : ", k, self.pop_sz_vals[k], self.pop_sz_prs[k])
+            i += 1
+            break
 
     def findnearest(self, k):
         ind = bisect.bisect_left(self.popularities, k)
@@ -122,7 +138,7 @@ class pop:
                 sum_count = 0
                 key = int(l[0])
             else:
-                sum_count += int(l[1])
+                sum_count += float(l[1])
                 
         p_keys = list(self.popularities.keys())
         vals = []

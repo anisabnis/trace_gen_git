@@ -53,19 +53,28 @@ class node:
         self.next = n
 
 
-    def findUniqBytes(self, n):
+    def findUniqBytes(self, n, debug):
 
         curr_node = self
         next_node = n
+        local_uniq_bytes = 0
+
+        ### If curr node and next node belong to the same parent
+        if curr_node.parent.id == next_node.parent.id:
+            for i in range(curr_node.child_idx + 1, next_node.child_idx):
+                local_uniq_bytes += curr_node.parent.children[i].s * curr_node.parent.children[i].b
+
+            #debug.write("same parent - lbytes : " + str(local_uniq_bytes) + " " + str(curr_node.child_idx) + " " + str(next_node.child_idx) + "\n")
+            return local_uniq_bytes
         
         lca_id = curr_node.lca(next_node)        
+
+        #debug.write("uniq bytes : p_id " + str(self.parent.id) + " next_id " + str(n.id) + " LCA id " + str(lca_id) + "\n")
 
         curr_parent = curr_node.parent
         child_node = curr_node
         child_idx = child_node.child_idx
             
-        local_uniq_bytes = 0
-
         while curr_parent.id != lca_id:
                 
             if child_idx == len(curr_parent.children):
@@ -81,6 +90,8 @@ class node:
             curr_parent = curr_parent.parent
             child_node  = child_node.parent
             child_idx   = child_node.child_idx
+
+        save_node1 = child_node
 
         curr_parent = next_node.parent
         child_node = next_node
@@ -102,17 +113,20 @@ class node:
             child_node  = child_node.parent
             child_idx   = child_node.child_idx
 
+        save_node2 = child_node
+
+        for i in range(save_node1.child_idx + 1, save_node2.child_idx):
+            lb = save_node1.parent.children[i].s * save_node1.parent.children[i].b
+            local_uniq_bytes += lb
 
         return local_uniq_bytes
 
-
-
-    def cleanUpAfterInsertion(self, sd, inserted_node):
+    def cleanUpAfterInsertion(self, sd, inserted_node, debug):
         curr_node = self
         next_node = curr_node.next
 
         if next_node == None:
-            self.delete_node()
+            self.delete_node(debug)
             return
 
         uniq_bytes = curr_node.s
@@ -136,7 +150,7 @@ class node:
         return to_del_nodes
 
 
-    def delete_node(self):
+    def delete_node(self, debug):
         weight = self.s * self.b
         p = self.parent
         
@@ -144,7 +158,7 @@ class node:
             return
 
         self.parent.children = [c for c in self.parent.children if c.id != self.id]
-
+        
         i = 0
         for c in self.parent.children:
             c.child_idx = i
@@ -157,16 +171,32 @@ class node:
 
         p = self.parent
         if p.s == 0:
-            p.delete_node()
+            p.delete_node(debug)
         
 
-    def rebalance(self):
+    def rebalance(self, debug):
         if self.is_root == True or self == None:
-            return
+            ## if you create new root return new root
+            if len(self.children) > 8:
+                #debug.write("root rebalanced \n")
+                new_root = node("nl", 0)
+                new_root.s = self.s
+                new_root.set_b()
+                new_root.children.append(self)
+                new_root.is_root = True
+                self.is_root = False
+                self.parent = new_root
+                self.split_node()
+                return new_root
+                
+            ## if you dont create new root 
+            return self
 
         if len(self.children) > 8:
+            #debug.write("Am imbalance\n")
             self.split_node()
-        self.parent.rebalance()
+        r = self.parent.rebalance(debug)
+        return r
 
 
     def split_node(self):
@@ -197,7 +227,7 @@ class node:
         self.children = self.children[:4]
         self.s = self.s - rm_val
         
-    def insertAt(self, sd, n, pos, curr_id):
+    def insertAt(self, sd, n, pos, curr_id, debug):
 
         if len(self.children) == 0:
 
@@ -210,10 +240,14 @@ class node:
             if self.id == curr_id:
                 pos += 1
                 descrepency = 0                
+
             elif thr > z:
                 pos += 1
                 descrepency = self.s - sd
+                
 
+            #debug.write("\n")
+            #debug.write("insert at position : " + str(pos) + " and the parent is : " + str(self.parent.id) + "\n")
             self.parent.children.insert(pos, n)
             n.parent = self.parent
 
@@ -229,8 +263,9 @@ class node:
         sd_rem = sd
         descrepency = 0
         for c in self.children:
+            debug.write(str(sd_rem) + ",")
             if sd_rem < c.s:
-                descrepency, fall_pos, obj_id = c.insertAt(sd_rem, n, i, curr_id)
+                descrepency, fall_pos, obj_id = c.insertAt(sd_rem, n, i, curr_id, debug)
                 break
 
             i += 1
