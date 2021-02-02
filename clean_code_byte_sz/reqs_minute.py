@@ -28,7 +28,7 @@ for l in f:
         no_reqs = 0
         no_hrs += 1
 
-    if no_hrs > 72:
+    if no_hrs > 240:
         break
 
 f.close()
@@ -41,10 +41,10 @@ for r in reqs:
     f.write(str(r) + "\n")
 f.close()
 
-# plt.plot(reqs)
-# plt.grid()
-# plt.xlabel("hrs")
-# plt.ylabel("No requests")
-# plt.savefig("all_reqs.png")
+plt.plot(reqs[72:240])
+plt.grid()
+plt.xlabel("hrs")
+plt.ylabel("No requests")
+plt.savefig("all_reqs.png")
     
     

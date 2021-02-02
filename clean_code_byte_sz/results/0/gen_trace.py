@@ -2,7 +2,7 @@ import sys
 from treelib import *
 from collections import defaultdict
 
-def gen_leaves(trace, sizes, items=None, total_sz=0):
+def gen_leaves(trace, sizes):
     # create a tree and return
     st_tree = defaultdict(list)
 
@@ -13,11 +13,6 @@ def gen_leaves(trace, sizes, items=None, total_sz=0):
     for i in range(len(trace)):
         oid = trace[i]
         n = node(oid, sizes[oid])
-
-        if items != None:
-            items[oid] = n
-            total_sz += sizes[oid]
-        
         if oid in seen_ele:
             n.unset_b()
             seen_ele[oid].set_next(n)
@@ -63,13 +58,6 @@ def generate_tree(trace_list):
             if i%10000 == 0:
                 print("Parsed number of nodes : ", i)
 
-
-        if len(st_tree[lvl]) > 2*i+2:
-            n3 = st_tree[lvl][2*i+1]
-            p_n = st_tree[lvl+1][-1]
-            n3.set_parent(p_n)
-            p_n.add_child(n3)
-            
         lvl += 1
 
     return st_tree, lvl

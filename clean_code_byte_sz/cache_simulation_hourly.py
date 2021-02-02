@@ -20,14 +20,14 @@ for l in f:
     l = int(l.strip())
     ttl_reqs += l
     reqs_6hr.append(l)
-    if ttl_reqs > 33554432:
-        break
+    #if ttl_reqs > 33554432:
+    #    break
 ttl_tm = len(reqs_6hr)
 f.close()
 
-print(reqs_6hr)
+# print(reqs_6hr)
 
-print("len of trace : ", len(reqs))
+# print("len of trace : ", len(reqs))
 
 # f = open("results/" + str(tc) + "/sampled_sizes.txt", "r")
 # sizes = f.readline()
@@ -35,17 +35,17 @@ print("len of trace : ", len(reqs))
 # sizes = [int(s) for s in sizes if s != '']
 # f.close()
 
-obj_reqs = 0
-byte_reqs = 0
-obj_hits_fifo = 0
-byte_hits_fifo = 0
-obj_hits_lru = 0
-byte_hits_lru = 0
+# obj_reqs = 0
+# byte_reqs = 0
+# obj_hits_fifo = 0
+# byte_hits_fifo = 0
+# obj_hits_lru = 0
+# byte_hits_lru = 0
 
-fifo_c = FIFOCache(cache_size)
-lru_c = LRUCache(cache_size)
+# fifo_c = FIFOCache(cache_size)
+# lru_c = LRUCache(cache_size)
 
-objects = set()
+# objects = set()
 
 # f = open("results/" + str(tc) + "/generated.stats" +  str(cache_size) + ".txt", "w")
 # #First run the requests for lru and fifo
@@ -64,8 +64,8 @@ objects = set()
 
 #     #if overall_reqs > 1000000:
 
-#     if overall_reqs < 25000000:
-#         continue
+#     #if overall_reqs < 25000000:
+#     #    continue
 
 #     byte_reqs += obj_sz
 #     obj_reqs += 1
@@ -104,16 +104,16 @@ objects = set()
 #         curr_tm += 1
 #         count_reqs = 0
 
-    #if i > 80000000:
-    #    break
+#     if i > 80000000:
+#        break
 
 
-total_objects = len(objects)
-f.close()
+# total_objects = len(objects)
+# f.close()
 
-print(len(objects))
+#print(len(objects))
 #asdf
-total_reqs = obj_reqs
+#total_reqs = obj_reqs
 
 obj_reqs = 0
 byte_reqs = 0
@@ -147,8 +147,11 @@ f = open("results/" + str(tc) + "/original.stat"  + str(cache_size) + ".txt", "w
 curr_tm = 0
 overall_reqs = 0
 count_reqs = 0
+
+f1 = open("all_sort_int", "r")
 for cnt in range(1):
-    f1 = open("trace_" + str(tc) + ".txt", "r")
+    #f1 = open("trace_" + str(tc) + ".txt", "r")
+
     i = 0
     j = 0
     objects = set()
@@ -211,7 +214,10 @@ for cnt in range(1):
             curr_tm += 1
             count_reqs = 0
 
-        if inner_lines > 33554432:
+        if curr_tm >= ttl_tm - 2:
+            break
+
+        if inner_lines > 970554432:
             break
 
     f1.close()

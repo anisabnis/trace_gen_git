@@ -192,11 +192,22 @@ class node:
             return self
 
         if len(self.children) > 8:
-            #debug.write("Am imbalance\n")
             self.split_node()
-        r = self.parent.rebalance(debug)
+            r = self.parent.rebalance(debug)
+
         return r
 
+
+    def delete_last_node(self, debug):
+        c = self
+
+        while len(c.children) > 0:
+            c = c.children[-1]
+
+        c.delete_node(debug)
+
+        return c.s
+                    
 
     def split_node(self):
         n_pos = self.child_idx
@@ -268,6 +279,13 @@ class node:
 
         return descrepency, fall_pos, obj_id
 
+    def add_child_first_pos(self, n, debug):
+        self.children.insert(0, n)
+        n.parent = self
+        n.update_till_root()
+        return self.rebalance(debug)
+
+    
     def set_b(self):
         self.b = 1
 

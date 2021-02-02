@@ -14,100 +14,70 @@ import datetime
 import sys
 import math
 
-TB = 1000000000
-MIL = 1000000
 
 if __name__ == "__main__":
     
     t_len = int(sys.argv[1])
-    w_dir = sys.argv[2]
+    no_objects = int(sys.argv[2])
+    w_dir = sys.argv[3]
 
-    no_objects = 0
-    
     log_file = open("results/" + w_dir + "/log_file.txt", "w")
     log_file.flush()
 
-    popularities = defaultdict()
-    sizes = defaultdict()
-    iats = defaultdict()
+    sc = 1
+    scale_down = 1    
 
-    ## Probability of one hit wonders
-    one_hits   = 0
-    total_objs = 0
-
-    for i in range(8):
-        f = open("results/" + w_dir + "/one_hits_" + str(i) + ".txt")
-        l = f.readline()
-        l = l.strip().split(" ")
-        one_hits += int(l[0])
-        total_objs += int(l[1])
-
-    one_hit_pr = float(one_hits)/total_objs
+    ## Assign popularities and sizes to each object from the joint distribution
+    joint_dst = pop("results/" + w_dir + "/joint_dst.txt")
+    popularities = joint_dst.sample_popularities(int(no_objects) * 10)
+    #popularities.sort(reverse=True)
+    #popularities = np.append(popularities, [1]*8*no_objects)
+    plot_list(popularities)
+    plt.savefig("results/" + w_dir + "/popdst.png")
+    plt.clf()
 
     ## Assign sizes based on popularities
     total_sz = 0
-    
-    ## Joint distribution of popularity and size
-    iat_pop = pop_sz_dst("results/" + w_dir + "/iat_pop_fnl.txt")
-
-    iat_sz = pop_sz_dst("results/" + w_dir + "/iat_sz_fnl.txt")
-
-    ## Joint distribution of iat and stack distance
-    fd_sample_opp = pop_sz_dst("results/" + w_dir + "/fd_final.txt", True) 
-
-    ## Sampled iats prior to evaluation
-
-    iat_dst = pop("results/" + w_dir + "/iat_sz_fnl.txt")
-    prior_iats = iat_dst.sample_popularities(40*MIL)
-    
-    req_count = defaultdict(int)    
-    i = 0
-    j = 0
-    while total_sz < 10 * TB:
-
-        if random.random() < one_hit_pr:
-            iat = -200
-        else:        
-            ##Sample an inter-arrival time
-            #iat = int(fd_sample_opp.sample(total_sz))        
-            iat = prior_iats[j]
-            j += 1
-            
-        iats[i] = iat        
-        
-        ## Convert inter-arrival time to popularity
-        if iat == -200:
-            p = 1
-            ii = -1
+    joint_dst = pop_sz_dst("results/" + w_dir + "/joint_dst.txt")
+    sizes = []
+    for i in range(len(popularities)):
+        p = popularities[i]
+        sz = joint_dst.sample(p)
+        sizes.append(sz)
+        if i < no_objects:
+            total_sz += sizes[i]
         else:
-            p = iat_pop.sample(iat)                
-            ii = iat
+            continue
 
-        ## Use the popularity to sample size
-        popularities[i] = p        
-        sz = iat_sz.sample(ii)
-        total_sz += sz
-        sizes[i] = sz
-        no_objects += 1        
-        req_count[i] = 0
-        i += 1
-
-    new_objects = j
-        
     print("Len of sizes : ", len(sizes), total_sz)
-    
+
     debug = open("results/" + w_dir + "/debug.txt", "w")
+
+    ## Write to disk
+    f = open("results/" + w_dir + "/sampled_popularities.txt", "w")
+    f.write(",".join([str(x) for x in popularities]))
+    f.close()
+
+    f = open("results/" + w_dir + "/sampled_sizes.txt", "w")
+    f.write(",".join([str(x) for x in sizes]))
+    f.close()
+
+    log_file.write("Done writing sampled popularities and sizes to file " + str(datetime.datetime.now()) + "\n")
+    log_file.flush()
 
     ## generate random trace
     trace = range(no_objects)
     curr_max_seen = 0
-    
+
     ## create a tree structure using the initial tree
-    trace_list, ss = gen_leaves(trace, sizes)
+    trace_list = gen_leaves(trace, sizes)
     st_tree, lvl = generate_tree(trace_list)
     root = st_tree[lvl][0]
     root.is_root = True
     curr = st_tree[0][0]
+
+    ## Stats to be collected
+    req_count = [0] * (15*no_objects)
 
     ## Initialize
     c_trace = []
@@ -117,28 +87,22 @@ if __name__ == "__main__":
     no_desc = 0
     fail = 0
     total_objects = no_objects
-    fd_sample = pop_sz_dst("results/" + w_dir + "/fd_final.txt") 
+    fd_sample = pop_sz_dst("results/" + w_dir + "/fd_bytes.txt", "pop", total_sz * 1000) 
     sampled_fds = []
     sampled_sds_pop = defaultdict(list)
     result_fds = []
     land_pos = []
     land_obj_sz = []
 
-    #f = open("results/" + w_dir + "/prior_sampled_iats.txt", "w")
-    #f.write(",".join([str(x) for x in prior_iats]))
-    #f.close()
+    i = 1
 
-    sz_removed = 0
-    sz_added   = 0
-    
     while curr != None and i <= t_len:
 
         pp = popularities[curr.obj_id]            
 
         if pp > 1:
-            
-            sd = fd_sample.sample(iats[curr.obj_id])
-            sd = int(sd)
+            sd = fd_sample.sample(pp - 1)
+            sd = int(sd)/1000
 
             if sd > total_sz:
                 continue
@@ -166,8 +130,7 @@ if __name__ == "__main__":
 
         if req_count[curr.obj_id] >= popularities[curr.obj_id]:
             end_object = True
-            sz_removed += curr.s
-            
+        
         if end_object == False:
 
             descrepency, land, o_id = root.insertAt(sd, n, 0, curr.id, debug)                            
@@ -176,6 +139,7 @@ if __name__ == "__main__":
 
             land_obj_sz.append(sizes[o_id])
 
+            #local_uniq_bytes = curr.findUniqBytes(n, debug) + 1 * curr.s
             local_uniq_bytes = 0
 
             debug.write("debugline : " + str(local_uniq_bytes) + " " + str(sd) + " " + str(root.s) + " " + str(descrepency) + "\n")
@@ -189,38 +153,16 @@ if __name__ == "__main__":
 
         else:            
 
-            while True:
-                debug.write("debugline : " + str(-1) + " " + str(-1) + " " + str(-1) + " " + str(0) + "\n")
+            debug.write("debugline : " + str(-1) + " " + str(-1) + " " + str(-1) + " " + str(0) + "\n")
+            n = node(total_objects, sizes[total_objects])
+            req_count[total_objects] = 0
+            total_objects += 1
+            n.set_b()
+            descrepency, x, y = root.insertAt(root.s - 1, n, 0, curr.id, debug)
 
-                if random.random() < one_hit_pr:
-                    iat = -1
-                    p = 1
-                else:
-                    iat = prior_iats[new_objects]
-                    p = iat_pop.sample(iat)
-                    
-                iats[total_objects] = iat
-
-                popularities[total_objects] = p        
-
-                sz = iat_sz.sample(iat)
-                sizes[total_objects] = sz
-            
-                n = node(total_objects, sz)
-                sz_added += sz
-            
-                req_count[total_objects] = 0
-                total_objects += 1
-                new_objects += 1
-                n.set_b()
-                descrepency, x, y = root.insertAt(root.s - 1, n, 0, curr.id, debug)
-            
-                if n.parent != None:
-                    root = n.parent.rebalance(debug)
-
-                if root.s > 10 * TB:
-                    break
-                    
+            if n.parent != None:
+                root = n.parent.rebalance(debug)
+               
         next, success = curr.findNext()
         while (next != None and next.b == 0) or success == -1:
             next, success = next.findNext()
@@ -228,86 +170,85 @@ if __name__ == "__main__":
         del_nodes = curr.cleanUpAfterInsertion(sd, n, debug)        
 
         if i % 10001 == 0:
-            log_file.write("Trace computed : " +  str(i) + " " +  str(datetime.datetime.now()) +  " " + str(root.s) + " " + str(total_objects) + " " + str(curr_max_seen) + " fail : " + str(fail) + " sz added : " + str(sz_added) + " sz_removed : " + str(sz_removed) + "\n")
-            print("Trace computed : " +  str(i) + " " +  str(datetime.datetime.now()) +  " " + str(root.s) + " " + str(total_objects) + " " + str(curr_max_seen) + " fail : " + str(fail) + " sz added : " + str(sz_added) + " sz_removed : " + str(sz_removed))
+            log_file.write("Trace computed : " +  str(i) + " " +  str(datetime.datetime.now()) +  " " + str(root.s) + " " + str(total_objects) + " " + str(curr_max_seen) + " fail : " + str(fail) + "\n")
+            print("Trace computed : " +  str(i) + " " +  str(datetime.datetime.now()) +  " " + str(root.s) + " " + str(total_objects) + " " + str(curr_max_seen) + " fail : " + str(fail))
             log_file.flush()
 
         curr = next
         i += 1
 
 
-    log_file.write("Done writing sampled popularities and sizes to file " + str(datetime.datetime.now()) + "\n")
-    log_file.flush()
-
-        
     len_c_trace = len(c_trace)
     print("c trace length : ", len_c_trace)
 
-    # if len_c_trace < t_len :
-    #     n_power_2 = int(np.power(2, np.floor(math.log(len(c_trace), 2))))
-    #     c_trace = c_trace[:n_power_2]
-    # else:
-    #     n_power_2 = int(np.power(2, np.floor(math.log(len(c_trace), 2))))
-    #     c_trace = c_trace[:n_power_2]
-
-    ## Write to disk
-    # f = open("results/" + w_dir + "/sampled_popularities.txt", "w")
-    # f.write(",".join([str(x) for x in list(popularities.values())]))
-    # f.close()
-
-    # f = open("results/" + w_dir + "/sampled_iats.txt", "w")
-    # f.write(",".join([str(x) for x in list(iats.values())]))
-    # f.close()
+    if len_c_trace < t_len :
+        n_power_2 = int(np.power(2, np.floor(math.log(len(c_trace), 2))))
+        c_trace = c_trace[:n_power_2]
+    else:
+        n_power_2 = int(np.power(2, np.floor(math.log(len(c_trace), 2))))
+        c_trace = c_trace[:n_power_2]
     
-    # f = open("results/" + w_dir + "/sampled_sizes.txt", "w")
-    # f.write(",".join([str(x) for x in list(sizes.values())]))
-    # f.close()
-        
-    # ## Write stats to disk
-    f = open("results/" + w_dir + "/sampled_fds_tmp.txt", "w")
+    ## Write stats to disk
+    f = open("results/" + w_dir + "/sampled_fds.txt", "w")
     for i in range(len(sampled_fds)):
         f.write(str(sampled_fds[i]) + ",")
     f.close()
 
-    # f = open("results/" + w_dir + "/result_fds.txt", "w")
-    # for i in range(len(result_fds)):
-    #     f.write(str(result_fds[i]) + ",")
-    # f.close()
+    f = open("results/" + w_dir + "/result_fds.txt", "w")
+    for i in range(len(result_fds)):
+        f.write(str(result_fds[i]) + ",")
+    f.close()
 
-    # ## b) Number of times each object is in the trace
-    # f = open("results/" + w_dir + "/req_count.txt", "w")
-    # for i in range(len(req_count)):
-    #     f.write(str(req_count[i]) + ",")
-    # f.close()
+    ## b) Number of times each object is in the trace
+    f = open("results/" + w_dir + "/req_count.txt", "w")
+    for i in range(len(req_count)):
+        f.write(str(req_count[i]) + ",")
+    f.close()
 
-    # ## c) The resulting trace
-    # f = open("results/" + w_dir + "/out_trace.txt", "w")
-    # for i in range(len(c_trace)):
-    #     f.write(str(c_trace[i]) + ",")
-    # f.close()    
-    # log_file.write("Done writing runtime stats to file " + str(datetime.datetime.now()) + "\n")
-    # log_file.flush()
+    ## c) The resulting trace
+    f = open("results/" + w_dir + "/out_trace.txt", "w")
+    for i in range(len(c_trace)):
+        f.write(str(c_trace[i]) + ",")
+    f.close()    
+    log_file.write("Done writing runtime stats to file " + str(datetime.datetime.now()) + "\n")
+    log_file.flush()
 
-    # ## Land position
-    # f = open("results/" + w_dir + "/land_position.txt", "w")
-    # for i in range(len(land_pos)):
-    #     f.write(str(land_pos[i]) + ",")
-    # f.close()
+    ## Land position
+    f = open("results/" + w_dir + "/land_position.txt", "w")
+    for i in range(len(land_pos)):
+        f.write(str(land_pos[i]) + ",")
+    f.close()
 
-    # plot_list(land_pos)
-    # plt.savefig("results/" + w_dir + "/land_position.png")
-    # plt.clf()
+    plot_list(land_pos)
+    plt.savefig("results/" + w_dir + "/land_position.png")
+    plt.clf()
 
-    # ## Land obj size
-    # f = open("results/" + w_dir + "/land_obj_sz.txt", "w")
-    # for i in range(len(land_obj_sz)):
-    #     f.write(str(land_obj_sz[i]) + ",")
-    # f.close()
+    ## Land obj size
+    f = open("results/" + w_dir + "/land_obj_sz.txt", "w")
+    for i in range(len(land_obj_sz)):
+        f.write(str(land_obj_sz[i]) + ",")
+    f.close()
 
-    # plot_list(land_obj_sz)
-    # plt.savefig("results/" + w_dir + "/land_obj_sz.png")
-    # plt.clf()
+    plot_list(land_obj_sz)
+    plt.savefig("results/" + w_dir + "/land_obj_sz.png")
+    plt.clf()
 
+    asdf
+
+    fd2, sfd2, sds2, max_sd = gen_sd_dst(c_trace, sizes, sc, t_len, log_file, debug)        
+    f = open("results/" + w_dir + "/res_fd.txt", "w")
+    for i in range(len(fd2)):
+       f.write(str(sds2[i]) + " " + str(fd2[i]) + "\n")
+       if i%1000 == 0:
+           log_file.write("i : " + str(i))
+           log_file.flush()
+    f.close()
+    plt.clf()
+    plt.plot(sds2, fd2, label="result") #, marker="o", markersize=3, markevery=400)
+    plot_list(sampled_fds)    
+    plt.grid()
+    plt.legend()
+    plt.savefig("results/" + w_dir + "/stack_distance_byte.png")
 
 
     

@@ -2,7 +2,7 @@ import numpy as np
 import json
 from collections import defaultdict
 from util import *
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 class obj_size:
     def __init__(self, dir, o_file):
@@ -35,7 +35,7 @@ class obj_size:
         self.size_prs = np.cumsum(size_prs)
         self.sizes = sizes
 
-        plt.plot(self.sizes, self.size_prs, label="distribution")
+        #plt.plot(self.sizes, self.size_prs, label="distribution")
 
     def get_objects(self, no_objects):
         return np.random.choice(self.sizes, no_objects, p=self.size_dst)

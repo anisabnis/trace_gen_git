@@ -8,6 +8,7 @@ import random
 tc = sys.argv[1]
 cache_size = int(sys.argv[2]) * 1000000
 ignore = int(sys.argv[3]) * 1000000
+mod_u = int(sys.argv[4])
 
 obj_reqs = 0
 byte_reqs = 0
@@ -21,9 +22,16 @@ lru_c = LRUCache(cache_size)
 
 sizes_real = defaultdict()
 
-f = open("results/" + str(tc) + "/original.stats"  + str(cache_size) + ".txt", "w")
+if mod_u > 100:
+    f = open("results/" + str(tc) + "/original.stats"  + str(cache_size) + ".txt", "w")
+else:
+    f = open("results/" + str(tc) + "/original.stats"  + str(cache_size) + "_" + str(mod_u) + ".txt", "w")
 
-input = binaryParser("results/" + str(tc) + "/akamai2.bin")
+if tc == "w":
+    input = binaryParser("results/" + str(tc) + "/akamai1.bin")
+else:
+    input = binaryParser("results/" + str(tc) + "/akamai2.bin")
+    
 input.open()
 
 overall_reqs = 0
@@ -37,6 +45,9 @@ for cnt in range(1):
 
         r, obj_sz, t = input.readline()
 
+        if mod_u < 100 and r % 8 != mod_u:
+            continue
+        
         obj_sz = int(float(obj_sz)/1000)
         
         overall_reqs += 1
@@ -78,9 +89,15 @@ for cnt in range(1):
             f.write(str(obj_reqs) + " " + str(byte_reqs) + " " + str(obj_hits_fifo) + " " + str(byte_hits_fifo) + " " + str(obj_hits_lru) + " " + str(byte_hits_lru))
             f.write("\n")
             f.flush()
-            print("requests completed : ", obj_reqs)    
+            obj_reqs = 0
+            byte_reqs = 0
+            obj_hits_fifo = 0
+            byte_hits_fifo = 0
+            obj_hits_lru = 0
+            byte_hits_lru = 0
+            
 
-        if inner_lines > 300000000:
+        if inner_lines > 2000000000:
             break
 
 f.close()

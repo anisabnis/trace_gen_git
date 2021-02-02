@@ -49,5 +49,23 @@ class euParser(parser):
     def readline(self):
         pass
 
+class listParser(parser):
+    def __init__(self, f_name):
+        parser.__init__(self, f_name)
+
+    def open(self):
+        self.ifile = open(self.file, "r")
+        self.reqs = self.ifile.readline().strip().split(",")
+        self.reqs = [int(x) for x in self.reqs if x!= ""]
+        self.no_reqs = len(self.reqs)
+        self.counter = 0
+        
+    def readline(self):
+        r = self.reqs[self.counter]
+        self.counter += 1
+        return r
+
+    def length(self):
+        return self.no_reqs
     
     

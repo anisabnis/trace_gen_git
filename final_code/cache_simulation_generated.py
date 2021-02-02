@@ -10,13 +10,16 @@ cache_size = int(sys.argv[2]) * 1000000
 ignore = int(sys.argv[3]) * 1000000
 
 
-f = open("results/" + str(tc) + "/out_trace.txt" , "r")
+f = open("results/" + str(tc) + "/out_trace_lrusm_unit.txt" , "r")
 reqs = f.readline()
 reqs = reqs.strip().split(",")
 reqs = [int(r) for r in reqs if r != '']
 f.close()
 
-f = open("results/" + str(tc) + "/sampled_sizes.txt", "r")
+print("Len of trace : ", len(reqs))
+
+
+f = open("results/" + str(tc) + "/sampled_sizes_lrusm_unit.txt", "r")
 sizes = f.readline()
 sizes = sizes.strip().split(",")
 sizes = [int(s) for s in sizes if s != '']
@@ -36,7 +39,7 @@ lru_c = LRUCache(cache_size)
 
 objects = set()
 
-f = open("results/" + str(tc) + "/generated.stats" +  str(cache_size) + ".txt", "w")
+f = open("results/" + str(tc) + "/generated.stats" +  str(cache_size) + "_lrusm_unit.txt", "w")
 #First run the requests for lru and fifo
 i = 0
 overall_reqs = 0
@@ -76,6 +79,11 @@ for r in reqs:
         f.write(str(obj_reqs) + " " + str(byte_reqs) + " " + str(obj_hits_fifo) + " " + str(byte_hits_fifo) + " " + str(obj_hits_lru) + " " + str(byte_hits_lru))
         f.write("\n")
         f.flush()
-        print("requests completed : ", obj_reqs)
+        byte_reqs = 0
+        obj_reqs = 0
+        obj_hits_fifo = 0
+        byte_hits_fifo = 0
+        obj_hits_lru = 0
+        byte_hits_lru = 0    
 
 f.close()

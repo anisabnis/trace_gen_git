@@ -6,6 +6,9 @@ from treelib import *
 from util import *
 import random
 
+TB = 1000000000
+MIL = 1000000
+
 def get_dict(x, max_len):
     keys = list(x.keys())
     keys.sort()
@@ -46,9 +49,10 @@ def convert_to_dict(x, max_len, type=1):
 
 ## Get the input parameters
 t_file = sys.argv[1]
-obj_mod = int(sys.argv[2])
-if obj_mod > 7:
-    sys.exit(0)
+#obj_mod = int(sys.argv[2])
+obj_mod = sys.argv[2]
+#if obj_mod > 7:
+#    sys.exit(0)
 
 ## objects are assumed to be in KB
 class cache:
@@ -57,6 +61,7 @@ class cache:
         self.items = defaultdict()
         self.curr_sz = 0
         self.debug = open("tmp.txt", "w")
+        self.debug_w = open("debug.txt", "w")
         self.no_del = 0
         
     def initialize(self, inital_objects, sizes, initial_times):        
@@ -102,7 +107,11 @@ class cache:
             if self.curr.obj_id == o:
                 return 0, dt
             
-            sd = self.curr.findUniqBytes(n, self.debug) + self.curr.s
+            sd = self.curr.findUniqBytes(n, self.debug) + self.curr.s + n.s
+
+            if random.random() < 0.001:
+                sd1 = self.uniq_bytes(n)
+                self.debug_w.write(str(sd) + " " + str(sd1) + "\n")                                       
             
             n.delete_node(self.debug)
             
@@ -160,7 +169,7 @@ class cache:
 parser = binaryParser("results/" + t_file + "/akamai2.bin")
 parser.open()
 
-lru = cache(10000000000)
+lru = cache(1*TB)
 
 initial_objects = list()
 initial_times = {}
@@ -201,26 +210,26 @@ obj_reqs = defaultdict(int)
 
 
 i = 0
-start_tm = 0
-total_bytes_req = 0
-total_reqs = 0
-
-max_len = 300000000
+bytes_in_cache = 0
 line_count = 0
 
-while True:
+min_tm = 100000000000000
+max_tm = 0
+
+obj, sz, tm = parser.readline()
+print("min time : ", tm)
+
+while bytes_in_cache < 1*TB:
+
     obj, sz, tm = parser.readline()
+    
     line_count += 1
-    
-    if i == 0:
-        start_tm = tm    
-    
-    if obj%8 != obj_mod:
-        continue
+
+#    if obj%8 != obj_mod:
+#        continue
     
     sz = np.ceil(float(sz)/1000)
 
-    total_bytes_req += sz
     obj_reqs[obj] += 1
 
     obj_iats[obj].append(-1)
@@ -231,30 +240,44 @@ while True:
         
         obj_sizes[obj] = sz
 
+        bytes_in_cache += sz
+
     initial_times[obj] = tm
         
-    if len(obj_sizes) > 1023:
-        break
-
-    total_reqs += 1
+    if line_count % 10000 == 0:
+        print("lines counted : ", line_count, bytes_in_cache)
     
     i += 1
     
+print("max time : ", tm)
+
+start_tm = tm
+
 lru.initialize(initial_objects, obj_sizes, initial_times)
 
 i = 0
-#max_len = 50000
+line_count = 0
+#max_len = 200000000
+max_len = 50000000
+total_bytes_req = 0
+total_reqs = 0
+total_misses = 0
+bytes_miss = 0
+flags = 0
 
 ## Stack distance is grouped in multiples of 200 MB and inter-arrival time in 200 seconds
 while True:
     obj, sz, tm = parser.readline()
     line_count += 1
-
-    if line_count%100000 == 0:
-        print("Processed : ", line_count)
     
-    if obj%8 != obj_mod:
-        continue
+    if line_count%100000 == 0:
+        print("Processed : ", line_count, flags, tm)
+        if tm - start_tm > 86400:
+            end_tm = tm
+            break
+        
+#    if obj%8 != obj_mod:
+#        continue
     
     sz = np.ceil(float(sz)/1000)
     
@@ -267,18 +290,22 @@ while True:
     k = lru.insert(obj, sz, tm)
 
     sd, iat = k
+
+    if iat < 0 and obj_reqs[obj] > 1:
+        flags += 1
     
     if sd != -1:
-        sd = float(sd)/200000
-        sd = int(sd) * 200000
+        sd = float(sd)/400000
+        sd = int(sd) * 400000
         iat = float(iat)/200
         iat = int(iat) * 200        
         sd_distances[iat].append(sd)
     else:
-        sd_distances[-1].append(-1)        
+        total_misses += 1
+        bytes_miss += sz
 
     obj_iats[obj].append(iat)
-        
+    
     i += 1
     
     if line_count > max_len:
@@ -288,11 +315,13 @@ while True:
 
 ### Stats Writing - write this in a differnet function -- looks dirty    
     
-f = open("results/" + t_file + "/footprint_desc_" + str(obj_mod) + ".txt", "w")
+f = open("results/" + t_file + "/footprint_desc_" + str(obj_mod) + "_test.txt", "w")
 ## Write the other stats into the file
-f.write(str(total_reqs) + " " + str(total_bytes_req) + " " + str(start_tm) + " " + str(end_tm) + "\n")
-for iat in sd_distances:
-    keys, vals = convert_to_dict(sd_distances[iat], max_len)
+f.write(str(total_reqs) + " " + str(total_bytes_req) + " " + str(start_tm) + " " + str(end_tm) + " " + str(total_misses) + " " + str(bytes_miss) + "\n")
+iat_keys = list(sd_distances.keys())
+iat_keys.sort()
+for iat in iat_keys:
+    keys, vals = convert_to_dict(sd_distances[iat], total_reqs)
     for i in range(len(keys)):
         f.write(str(iat) + " " + str(keys[i]) + " " + str(vals[i]) + "\n")
 f.close()

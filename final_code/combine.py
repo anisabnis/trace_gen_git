@@ -9,7 +9,7 @@ print(s, e, d)
 joint_dst = defaultdict(lambda : defaultdict(float))
 
 for i in range(s, e+1):
-    f = open("results/" + str(d) + "/iat_pop_" + str(i) + ".txt", "r")
+    f = open("results/" + str(d) + "/iat_sz_" + str(i) + ".txt", "r")
     cp = int(f.readline().strip())
 
     for l in f:
@@ -24,7 +24,7 @@ for i in range(s, e+1):
 
     f.close()
 
-f = open("results/" + str(d) + "/iat_pop_fnl.txt", "w")
+f = open("results/" + str(d) + "/iat_sz_fnl.txt", "w")
 pops = joint_dst.keys()
 pops.sort()
 

@@ -18,7 +18,7 @@ class pop_sz_dst:
 
         tmp_file = i_file.split("/")[-1]
         
-        if tmp_file == "fd_final.txt":
+        if tmp_file == "fd_final.txt" or tmp_file == "popularity_sd_pop.txt":
             l = f.readline()
             l = l.strip().split(" ")
             st = int(l[2])
@@ -39,7 +39,7 @@ class pop_sz_dst:
 
             l = l.strip().split(" ")
 
-            if tmp_file != "fd_final.txt":
+            if tmp_file != "fd_final.txt" and tmp_file != "popularity_sd_pop.txt":
                 if len(l) == 1:
                     key = int(l[0])
                     sum_pop += key
@@ -50,12 +50,13 @@ class pop_sz_dst:
                     key = int(float(l[0]))
                     sum_pop += key
                     keys_cnt += 1
-                                                     
+                    continue
+                    
             
             if upperlimit != -1 and sz > upperlimit:
                 continue
 
-            if tmp_file == "fd_final.txt":
+            if tmp_file == "fd_final.txt" or tmp_file == "popularity_sd_pop.txt":
                 objs = float(l[2])
                 sz   = int(float(l[1]))
             else:
@@ -192,6 +193,8 @@ class pop:
 
         sum_vals = sum(vals)
         vals = [float(x)/sum_vals for x in vals]
+
+        print(p_keys, vals)
         
         self.p_keys = p_keys
         self.pr = vals
@@ -202,11 +205,129 @@ class pop:
 
             
             
-            
-            
+class pop_opp:
+    def __init__(self, i_file, min_val, max_val):
+        f = open(i_file, "r")
+        self.all_keys = defaultdict(int)
 
+        l = f.readline()
+        sum_count = 0
+
+        total_pr = 0
+        for l in f:
+            l = l.strip().split(" ")
+
+            if len(l) == 1:
+                continue
+            else:
+                key = int(float(l[0]))
+                val = float(l[1])
+                if key >= min_val and key <= max_val:
+                    self.all_keys[key] += val                                
+                    total_pr += val
+                    
+        p_keys = list(self.all_keys.keys())
+        vals = []
+        for k in p_keys:
+            vals.append(self.all_keys[k])
+
+        sum_vals = sum(vals)
+        vals = [float(x)/sum_vals for x in vals]
+        
+        self.p_keys = p_keys
+        self.pr = vals
+
+                
+    def sample_keys(self, n):
+        return choices(self.p_keys, weights=self.pr,k=n)
+
+            
+class pop_opp2:
+    def __init__(self, i_file, min_val, max_val):
+        f = open(i_file, "r")
+        self.all_keys = defaultdict(int)
+
+        l = f.readline()
+        sum_count = 0
+
+        total_pr = 0
+        
+        for l in f:
+            l = l.strip().split(" ")
+
+            if len(l) == 1:
+                continue
+            else:
+                key = int(l[1])
+                val = float(l[2])
+                    
+                if key >= min_val and key <= max_val: 
+                    self.all_keys[key] += val
+                    total_pr += val
+            
+        p_keys = list(self.all_keys.keys())
+        vals = []
+        for k in p_keys:
+            vals.append(self.all_keys[k])
+
+        sum_vals = sum(vals)
+        vals = [float(x)/sum_vals for x in vals]
+        
+        self.p_keys = p_keys
+        self.pr = vals
+
+        print("total_pr : ", total_pr)
+        print("pr[-200 : ", self.all_keys[-200])
+
+        
+    def sample_keys(self, n):
+        return choices(self.p_keys, weights=self.pr,k=n)
+
+        
+
+class pop_opp3:
+    def __init__(self, i_file, min_val, max_val):
+        f = open(i_file, "r")
+        self.all_keys = defaultdict(int)
+
+        l = f.readline()
+        sum_count = 0
+
+        total_pr = 0
+        for l in f:
+            l = l.strip().split(" ")
+
+            if len(l) == 1:
+                continue
+            else:
+                key = int(float(l[0]))
+                val = float(l[2])
+                if key >= min_val and key <= max_val:
+                    self.all_keys[key] += val                                
+                    total_pr += val
+                    
+        p_keys = list(self.all_keys.keys())
+        p_keys.sort()
+        vals = []
+        for k in p_keys:
+            vals.append(self.all_keys[k])
+
+        sum_vals = sum(vals)
+        vals = [float(x)/sum_vals for x in vals]
+
+        print(p_keys)
+        print(vals)
+        
+        self.p_keys = p_keys
+        self.pr = vals
+
+                
+    def sample_keys(self, n):
+        return choices(self.p_keys, weights=self.pr,k=n)
         
 
 
             
         
+
+    

@@ -2,7 +2,7 @@ import numpy as np
 import json
 from collections import defaultdict
 from util import *
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import bisect
 from random import choices
 
@@ -73,10 +73,10 @@ class pop_sz_dst:
         counts = [float(x)/sum_counts for x in counts]
         counts = np.cumsum(counts)
         
-        plt.plot(szs, counts)
-        plt.grid()
-        plt.savefig("overall_" + arg + "_dst.png")
-        plt.clf()
+        #plt.plot(szs, counts)
+        #plt.grid()
+        #plt.savefig("overall_" + arg + "_dst.png")
+        #plt.clf()
 
     def sample_each_popularity(self):
         self.samples = defaultdict(list)
@@ -91,11 +91,11 @@ class pop_sz_dst:
         print(self.popularities[0], self.popularities[-1])
 
         to_plot = np.cumsum(self.popularities)
-        plt.clf()
-        plt.plot(to_plot)
-        plt.grid()
-        plt.savefig("pop_dst.png")
-        plt.clf()
+        #plt.clf()
+        #plt.plot(to_plot)
+        #plt.grid()
+        #plt.savefig("pop_dst.png")
+        #plt.clf()
 
     def findnearest(self, k):
         ind = bisect.bisect_left(self.popularities, k)

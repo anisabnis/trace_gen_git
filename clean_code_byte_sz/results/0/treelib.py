@@ -17,7 +17,6 @@ class node:
         self.id = node.counter
         self.child_idx = 0
         self.is_root = False
-        self.last_access = -1
         node.counter += 1
 
     def addValTillRoot(self, val):
@@ -68,7 +67,9 @@ class node:
             return local_uniq_bytes
         
         lca_id = curr_node.lca(next_node)        
-        
+
+        #debug.write("uniq bytes : p_id " + str(self.parent.id) + " next_id " + str(n.id) + " LCA id " + str(lca_id) + "\n")
+
         curr_parent = curr_node.parent
         child_node = curr_node
         child_idx = child_node.child_idx
@@ -95,9 +96,8 @@ class node:
         child_node = next_node
         child_idx = child_node.child_idx
 
-        
         while curr_parent.id != lca_id:
-            
+
             if child_idx == 0:
                 curr_parent = curr_parent.parent
                 child_node  = child_node.parent
@@ -155,7 +155,7 @@ class node:
         
         if p == None:
             return
-              
+
         self.parent.children = [c for c in self.parent.children if c.id != self.id]
         
         i = 0
@@ -174,8 +174,6 @@ class node:
         
 
     def rebalance(self, debug):
-
-        
         if self.is_root == True or self == None:
             ## if you create new root return new root
             if len(self.children) > 8:
@@ -194,23 +192,11 @@ class node:
             return self
 
         if len(self.children) > 8:
+            #debug.write("Am imbalance\n")
             self.split_node()
-
         r = self.parent.rebalance(debug)
         return r
 
-
-    def delete_last_node(self, debug):
-        c = self
-
-        while len(c.children) > 0:
-            c = c.children[-1]
-
-        obj_id = c.obj_id
-        c.delete_node(debug)
-
-        return c.s, obj_id
-                    
 
     def split_node(self):
         n_pos = self.child_idx
@@ -272,7 +258,6 @@ class node:
         i = 0
         sd_rem = sd
         descrepency = 0
-        
         for c in self.children:
             if sd_rem < c.s:
                 descrepency, fall_pos, obj_id = c.insertAt(sd_rem, n, i, curr_id, debug)
@@ -283,34 +268,6 @@ class node:
 
         return descrepency, fall_pos, obj_id
 
-    def deleteAt(self, sd, debug):
-
-        if len(self.children) == 0:
-            self.delete_node(debug)
-            return self
-            
-        sd_rem = sd
-        
-        for c in self.children:
-            if sd_rem < c.s:
-                n = c.deleteAt(sd_rem, debug)
-                break
-            sd_rem = sd_rem - (c.s * c.b)
-            
-        return n
-        
-    def add_child_first_pos(self, n, debug):
-        self.children.insert(0, n)
-        i = 0
-        for c in self.children:
-            c.child_idx = i
-            i += 1
-        
-        n.parent = self
-        n.update_till_root()
-
-        return self.rebalance(debug)
-    
     def set_b(self):
         self.b = 1
 
@@ -351,8 +308,7 @@ class node:
 
     def update_till_root(self):        
         val = self.s * self.b
-        
-        
+
         p = self.parent
         while p != None:
             p.s += val

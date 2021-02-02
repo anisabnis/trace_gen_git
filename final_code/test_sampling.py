@@ -29,10 +29,10 @@ def plot_list(x, label="-", maxlim=100000000000):
 
 w_dir = sys.argv[1]
 
-iat_dst = pop("results/" + w_dir + "/iat_pop_fnl.txt", 0, 36800)
+iat_dst = pop("results/" + w_dir + "/iat_pop_fnl.txt", 0, 39800)
 prior_iats = iat_dst.sample_popularities(10*1000000)
 
-iat_pop = pop_sz_dst("results/" + w_dir + "/iat_pop_fnl.txt", False, 36800, 0)
+iat_pop = pop_sz_dst("results/" + w_dir + "/iat_pop_fnl.txt", False, 39800, 0)
 popularities = [iat_pop.sample(i) for i in prior_iats]
 
 fd_sample = pop_sz_dst("results/" + w_dir + "/fd_final.txt") 

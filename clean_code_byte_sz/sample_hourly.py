@@ -24,36 +24,15 @@ no_objects = 30000000
 
 joint_dst = pop("results/" + w_dir + "/joint_dst.txt")
 popularities = joint_dst.sample_popularities(int(no_objects))
-# popularities.sort()
-
-# popularities = [x for x in popularities if x > 1]
 
 
-# plot_list(popularities, label="sample", maxlim=50)
-# #print(popularities[:100000])
-
-# ppp = defaultdict(int)
-# f = open("trace_" + str(w_dir) + ".txt", "r")
-# i = 0
-# for l in f:
-#     oid = int(l.strip().split(" ")[1])
-#     ppp[oid] += 1
-#     i += 1
-#     if i > 4097152:
-#         break
-
-# #ppp = list(ppp.values()).sort()[:2000]
-# ppp = list(ppp.values())
-# ppp.sort()
-# ppp = [x for x in ppp if x > 1]
-
-# #print(ppp[:100000])
-# plot_list(ppp, label="orig", maxlim=50)
-# plt.grid()
-# plt.legend()
-# plt.savefig("results/" + str(w_dir) + "/popularity.png")
-
-#asdf
+req_hr = []
+f = open("results/" + w_dir + "/req_hr.txt", "r")
+for l in f:
+    l = int(l.strip())
+    req_hr.append(l)
+r_hr = 0
+curr_tm = 0
 
 total_sz = 0
 joint_dst = pop_sz_dst("results/" + w_dir + "/joint_dst.txt")
@@ -67,20 +46,28 @@ for i in range(len(popularities)):
         continue
 
 total_sz = 800000000000
+fd_samples = []
+for i in range(len(req_hr)):        
+    fd_sample = pop_sz_dst("results/" + w_dir + "/fd_bytes_" + str(i) + ".txt", "pop", total_sz * 1000) 
+    fd_samples.append(fd_sample)
 
-#total_sz = 100000
-fd_sample = pop_sz_dst("results/" + w_dir + "/fd_bytes.txt", "pop", total_sz * 1000) 
 i = 1
 req_cnt = 0
 for p in popularities:
     if p > 1:
         for k in range(p-1):
-            sd = fd_sample.sample(p - 1)
+            sd = fd_samples[curr_tm].sample(p - 1)
             sd = int(sd)/1000
             #if sd <= total_sz:
             samples.append(sd)
             req_cnt += 1
             sampleee[p].append(sd)
+            r_hr += 1
+            if r_hr > req_hr[curr_tm]:
+                curr_tm += 1
+                r_hr = 0
+
+
 
     if i % 10000 == 0:
         print("objects processed : ", i)
@@ -128,7 +115,7 @@ for l in f:
 #sum_prs = prs[-1]
 #prs = [float(pr)/sum_prs for pr in prs]
 plt.clf()
-plot_list(samples)
+plot_list(samples, label="sampled")
 plt.plot(fds, prs, label="original")
 plt.grid()
 plt.legend()

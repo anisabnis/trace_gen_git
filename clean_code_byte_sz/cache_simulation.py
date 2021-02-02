@@ -8,7 +8,7 @@ tc = sys.argv[1]
 cache_size = int(sys.argv[2]) * 1000000
 
 reqs_6hr = []
-f = open("results/" + tc + "/req_6hr.txt", "r")
+f = open("results/" + tc + "/req_hr.txt", "r")
 for l in f:
     l = int(l.strip())
     reqs_6hr.append(l)

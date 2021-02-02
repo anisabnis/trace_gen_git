@@ -20,7 +20,8 @@ def gen_leaves(trace, sizes, items=None, initial_times=None):
         if items != None:
             items[oid] = n
             total_sz += sizes[oid]
-            n.last_access = initial_times[oid]
+            if initial_times != None:                
+                n.last_access = initial_times[oid]
         
         trace_list.append(n)
 
