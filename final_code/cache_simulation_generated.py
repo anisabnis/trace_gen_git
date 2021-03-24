@@ -9,20 +9,19 @@ tc = sys.argv[1]
 cache_size = int(sys.argv[2]) * 1000000
 ignore = int(sys.argv[3]) * 1000000
 
-
-f = open("results/" + str(tc) + "/out_trace_lrusm_unit.txt" , "r")
+f = open("results/" + str(tc) + "/out_trace_pop_init_byte.txt" , "r")
 reqs = f.readline()
 reqs = reqs.strip().split(",")
 reqs = [int(r) for r in reqs if r != '']
 f.close()
-
+#reqs = reqs[50000000:]
 print("Len of trace : ", len(reqs))
 
 
-f = open("results/" + str(tc) + "/sampled_sizes_lrusm_unit.txt", "r")
+f = open("results/" + str(tc) + "/sampled_sizes_pop_init_byte.txt", "r")
 sizes = f.readline()
 sizes = sizes.strip().split(",")
-sizes = [int(s) for s in sizes if s != '']
+sizes = [float(s) for s in sizes if s != '']
 f.close()
 
 print(len(sizes))
@@ -39,7 +38,7 @@ lru_c = LRUCache(cache_size)
 
 objects = set()
 
-f = open("results/" + str(tc) + "/generated.stats" +  str(cache_size) + "_lrusm_unit.txt", "w")
+f = open("results/" + str(tc) + "/generated.stats" +  str(cache_size) + "_all.txt", "w")
 #First run the requests for lru and fifo
 i = 0
 overall_reqs = 0

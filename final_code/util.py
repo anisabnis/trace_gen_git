@@ -2,7 +2,7 @@ from treelib import *
 from gen_trace import *
 from collections import defaultdict
 import numpy as np
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 
 def plot_dict(x, label="-"):
@@ -17,7 +17,7 @@ def plot_dict(x, label="-"):
     vals = [float(x)/sum_vals for x in vals]
     vals = np.cumsum(vals)
     
-    #plt.plot(keys, vals, label=label)#, marker="^", markersize=3, markevery=500)
+    plt.plot(keys, vals, label=label)#, marker="^", markersize=3, markevery=500)
 
 
 def save_dict(x, f):

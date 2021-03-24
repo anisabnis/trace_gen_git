@@ -40,14 +40,22 @@ class binaryParser(parser):
 
 class euParser(parser):
     def __init__(self, f_name):
-
         parser.__init__(self, f_name)
 
     def open(self):
-        pass
+        self.ifile = open(self.file, "r")
+        l = self.ifile.readline()
 
     def readline(self):
-        pass
+        l = self.ifile.readline()
+        l = l.strip().split(" ")
+
+        tm = int(l[0])
+        obj = int(l[1])
+        sz = int(float(l[4]))
+
+        return obj, sz, tm
+
 
 class listParser(parser):
     def __init__(self, f_name):

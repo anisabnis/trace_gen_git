@@ -45,6 +45,8 @@ for cnt in range(1):
 
         r, obj_sz, t = input.readline()
 
+        i += 1
+        
         if mod_u < 100 and r % 8 != mod_u:
             continue
         
@@ -54,7 +56,6 @@ for cnt in range(1):
         inner_lines += 1
 
         j += 1
-        i += 1
         
         if j % 100000 == 0:
             print("lines read : ", j)

@@ -19,14 +19,15 @@ def hitrate(fname):
         
     return stat
 
-orig = hitrate("original.stats" + str(cs) + ".txt")
-new = hitrate("generated.stats" + str(cs) + ".txt")
-lrusm = hitrate("generated.stats_lrusm" + str(cs) + ".txt")
-
+orig = hitrate("original.stats" + str(cs) + "_0.txt")
+#new = hitrate("generated.stats" + str(cs) + ".txt")
+#lrusm = hitrate("generated.stats_lrusm" + str(cs) + ".txt")
+sz  = hitrate("generated.stats" + str(cs) + "_pop.txt")
 
 plt.plot(orig, marker="x", markevery=10000,label="original")
-plt.plot(new, marker="o", markevery=10000,label="OurMethod")
-plt.plot(lrusm, marker="^", markevery=10000,label="Lrusm")
+#plt.plot(new, marker="o", markevery=10000,label="OurMethod")
+#plt.plot(lrusm, marker="^", markevery=10000,label="Lrusm")
+plt.plot(sz, marker="x", markevery=10000,label="Pop")
 plt.xlabel("requests")
 plt.ylabel("hitrate")
 plt.legend()

@@ -7,6 +7,90 @@ import json
 import bisect
 import copy
 
+
+class joint_dst:
+    def __init__(self, i_file, opp=False, lowerlimit1=-1, lowerlimit2=-1):
+        key_val = defaultdict(lambda : defaultdict(int))
+        f = open(i_file, "r")
+        f.readline()
+
+        for l in f:
+            l = l.strip().split(" ")
+
+            key1 = int(float(l[0]))
+            key2 = int(float(l[1]))
+            val  = float(l[2])
+
+            if opp == False:
+                if key1 >= lowerlimit1 and key2 >= lowerlimit2:
+                    key_val[key1][key2] += val
+            else:
+                if key2 >= lowerlimit1 and key1 >= lowerlimit2:
+                    key_val[key2][key1] += val
+
+
+        self.pop_sz_vals = defaultdict(lambda : list)
+        self.pop_sz_prs = defaultdict(lambda : list)
+
+        sum_n_key = 0
+
+        for key in key_val:
+            ## For each key1 what are the available key2s
+            sizes = list(key_val[key].keys())
+            n_key = key
+            self.pop_sz_vals[n_key] = sizes
+
+            ## For each key1 what is the probability of a key2
+            prs = []
+            for s in sizes:
+                prs.append(key_val[key][s])
+            sum_prs = sum(prs)
+            prs = [float(x)/sum_prs for x in prs]
+            self.pop_sz_prs[n_key] = prs
+
+        self.sample_each_popularity()
+
+
+    def sample_each_popularity(self):
+        self.samples = defaultdict(list)
+        self.sampled_sizes = defaultdict(list)
+
+        for k in self.pop_sz_prs:
+            self.sampled_sizes[k] = choices(self.pop_sz_vals[k], weights=self.pop_sz_prs[k], k=10000)
+
+        self.samples_index = defaultdict(int)
+        self.popularities = list(self.pop_sz_prs.keys())
+        self.popularities.sort()
+        print(self.popularities[0], self.popularities[-1])
+
+
+    def findnearest(self, k):
+        ind = bisect.bisect_left(self.popularities, k)
+        if ind >= len(self.popularities):
+            ind = len(self.popularities) - 1
+        return self.popularities[ind]
+
+    def sample(self, k):
+
+        k1 = k
+
+        if k not in self.samples_index:
+            k = self.findnearest(k)
+
+        curr_index = self.samples_index[k]
+        if curr_index >= len(self.sampled_sizes[k]):
+            self.sampled_sizes[k] = choices(self.pop_sz_vals[k], weights=self.pop_sz_prs[k], k=10000)
+            self.samples_index[k] = 0
+            curr_index = 0
+
+        self.samples_index[k] += 1        
+        return int(self.sampled_sizes[k][curr_index])
+
+    
+
+    
+            
+
 class pop_sz_dst:
 
     def __init__(self, i_file, opp=False, upperlimit= -1, lowerlimit = -1):
@@ -18,7 +102,7 @@ class pop_sz_dst:
 
         tmp_file = i_file.split("/")[-1]
         
-        if tmp_file == "fd_final.txt" or tmp_file == "popularity_sd_pop.txt":
+        if tmp_file == "footprint_desc_all.txt" or tmp_file == "popularity_sd_pop.txt":
             l = f.readline()
             l = l.strip().split(" ")
             st = int(l[2])
@@ -39,7 +123,7 @@ class pop_sz_dst:
 
             l = l.strip().split(" ")
 
-            if tmp_file != "fd_final.txt" and tmp_file != "popularity_sd_pop.txt":
+            if tmp_file != "footprint_desc_all.txt" and tmp_file != "popularity_sd_pop.txt":
                 if len(l) == 1:
                     key = int(l[0])
                     sum_pop += key
@@ -56,7 +140,7 @@ class pop_sz_dst:
             if upperlimit != -1 and sz > upperlimit:
                 continue
 
-            if tmp_file == "fd_final.txt" or tmp_file == "popularity_sd_pop.txt":
+            if tmp_file == "footprint_desc_all.txt" or tmp_file == "popularity_sd_pop.txt":
                 objs = float(l[2])
                 sz   = int(float(l[1]))
             else:
@@ -67,7 +151,8 @@ class pop_sz_dst:
                 if key >= lowerlimit:
                     pop_sz[key][sz] += objs
             else:
-                pop_sz[sz][key] += objs
+                if key >= lowerlimit:
+                    pop_sz[sz][key] += objs
                 
             total_obj += objs                
             overall_sz_dst[sz] += 1
@@ -184,8 +269,7 @@ class pop:
                 if key >= min_val:
                     sum_count += float(l[1])
                 
-                
-            
+                            
         p_keys = list(self.popularities.keys())
         vals = []
         for k in p_keys:
@@ -193,8 +277,6 @@ class pop:
 
         sum_vals = sum(vals)
         vals = [float(x)/sum_vals for x in vals]
-
-        print(p_keys, vals)
         
         self.p_keys = p_keys
         self.pr = vals
@@ -204,7 +286,15 @@ class pop:
         return choices(self.p_keys, weights=self.pr,k=n)
 
             
-            
+    def getPr(self, pp):
+        i = 0
+        while True:
+            if self.p_keys[i] == pp:
+                break
+            i+=1
+        return self.pr[i]
+
+    
 class pop_opp:
     def __init__(self, i_file, min_val, max_val):
         f = open(i_file, "r")
@@ -326,8 +416,78 @@ class pop_opp3:
         return choices(self.p_keys, weights=self.pr,k=n)
         
 
+class byte_sd:
+    def __init__(self, i_file, min_val, max_val):
+        self.sd_keys = []
+        self.sd_vals = []
+        self.sd_frac = []
+        self.orig_sd_vals = []
+        self.sd_index = defaultdict(lambda : 0)
+        self.zero_sds = 0        
+        self.SD = defaultdict(lambda : 0)        
 
-            
+        f = open(i_file, "r")
+        l = f.readline()
+        l = l.strip().split(" ")
+        bytes_miss = float(l[-1])
+        bytes_req = float(l[1])
+        self.bytes_req = bytes_req
         
+        self.SD[-1] = float(bytes_miss)/bytes_req
+        self.sd_index[-1] = 0
 
+        for l in f:
+            l = l.strip().split(" ")
+            sd = int(l[1])
+            self.SD[sd] += float(l[2])        
+
+        self.sd_keys = list(self.SD.keys())
+        self.sd_keys.sort()
+
+        i = 1
+        for sd in self.sd_keys:
+            self.sd_vals.append(self.SD[sd])
+            self.sd_index[sd] = i
+            i += 1
+            
+        self.sd_frac = copy.deepcopy(self.sd_vals)
+        self.orig_sd_vals = copy.deepcopy(self.sd_vals)
+
+        self.total_bytes_req = 0
+        
+        
+    def reset(self):
+        self.sd_vals = self.orig_sd_vals
+        self.sd_frac = self.orig_sd_vals
+        self.total_bytes_req = 0
+        
+    def update(self, obj_sizes, sampled_sds):
+
+        for i in range(len(obj_sizes)):
+            fr = float(obj_sizes[i])/self.bytes_req
+            ind = self.sd_index[sampled_sds[i]]
+
+            self.total_bytes_req += obj_sizes[i]
+            
+            try:
+                #self.sd_frac[ind] -= fr
+                if self.sd_frac[ind] < 0:
+                    self.sd_frac[ind] = 0
+                    self.zero_sds += 1
+            except:
+                print("index : ", ind)
+                    
+        self.sd_vals = []
+        sum_fr = sum(self.sd_frac)
+        for fr in self.sd_frac:
+            self.sd_vals.append(float(fr)/sum_fr)
+                
+        #if self.zero_sds >= len(self.sd_frac):
+        if self.total_bytes_req >= self.bytes_req or self.zero_sds >= len(self.sd_frac): 
+            self.reset()
+            self.zero_sds = 0
+            
+    def sample_keys(self, obj_sizes, sampled_sds, n):
+        self.update(obj_sizes, sampled_sds)
+        return choices(self.sd_keys, weights = self.sd_vals, k = n)
     

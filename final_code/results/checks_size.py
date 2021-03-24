@@ -10,8 +10,6 @@ d = sys.argv[1]
 def plot_dict(x, ohp, label="-"):
     print("ohp : ", ohp)
 
-    #ohp = 0
-    
     keys = list(x.keys())
     keys.sort()
 
@@ -41,12 +39,13 @@ def plot_list(x, ohp, label="-", maxlim=100*TB):
 
 
 def plot_orig():
-    f = open(d + "/byte_footprint_desc_all.txt", "r")
+    f = open(d + "/size_sd_0.txt", "r")
+    #f = open(d + "/footprint_desc_constructed_sz.txt", "r")
     #f = open(d + "/fd_final.txt", "r")
     #f = open(d + "/fd_final.txt", "r")
     l = f.readline()
     l = l.strip().split(" ")
-    one_hits_pr = float(l[-1])/float(l[1])
+    one_hits_pr = float(l[-1])/float(l[0])
     prs = defaultdict(lambda : 0)
     #prs[25*TB + 200000] += one_hits_pr
 
@@ -62,30 +61,22 @@ def plot_orig():
         if key > max_key:
             max_key = key
 
-    #prs[-200000] += one_hits_pr
+    #prs[max_key + 200000] += one_hits_pr
     plot_dict(prs, one_hits_pr, "original")
 
     print("total_pr : ", total_pr)
-    return one_hits_pr, max_key
+    return one_hits_pr
+    
+one_hit_pr = plot_orig()
+    
+f = open(d + "/sampled_fds_sz.txt", "r")
+l = f.readline()
+l = l.strip().split(",")[:-1]
+sampled_fds = [int(x) for x in l]
 
-one_hit_pr, max_key = plot_orig()
+plot_list(sampled_fds, one_hit_pr, label="sampled")
 
-# print(max_key)
-# f = open(d + "/byte_sampled_fds.txt", "r")
-# l = f.readline()
-# l = l.strip().split(",")[:-1]
-# sampled_fds = [int(x) for x in l]
-# print(max(sampled_fds))
-# sampled_fds = [x for x in sampled_fds if x >= 0]
-# #sampled_fds = [-200000 if x == -1 else x for x in sampled_fds]
-# #len_miss = len([x for x in sampled_fds if x == -200000])
-
-# #print("one_hit_pr : ", float(len_miss)/len(sampled_fds))
-
-# #print(sampled_fds)
-# plot_list(sampled_fds, one_hit_pr, label="sampled")
-
-# f = open("v/footprint_desc_constructed.txt","r")
+# f = open("v/footprint_desc_constructed_sz.txt","r")
 # xs = []
 # pr = []
 # for l in f:
@@ -105,4 +96,4 @@ plt.legend()
 plt.grid()
 plt.xlabel("FDs")
 plt.ylabel("CDF")
-plt.savefig(d + "/byte_sampled_fds.png")
+plt.savefig(d + "/sampled_fds_sz.png")

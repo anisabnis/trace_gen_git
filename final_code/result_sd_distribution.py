@@ -153,10 +153,10 @@ class cache:
         return sd
     
 #parser = listParser("results/" + t_file + "/generated_traces/out_trace_all.txt")
-parser = listParser("results/" + t_file + "/out_trace_pop.txt")
+parser = listParser("results/" + t_file + "/out_trace_pop_init.txt")
 parser.open()
 
-f = open("results/" + t_file + "/sampled_sizes_pop.txt", "r")
+f = open("results/" + t_file + "/sampled_sizes_pop_init.txt", "r")
 sizes = f.readline().strip().split(",")
 sizes = [int(x) for x in sizes]
 
@@ -234,7 +234,7 @@ while True:
     if line_count > max_len:
         break
 
-f = open("results/" + t_file + "/footprint_desc_constructed_pop.txt", "w")
+f = open("results/" + t_file + "/footprint_desc_constructed_pop_init.txt", "w")
 keys, vals = get_dict_2(sd_distances, max_len)
 for i in range(len(keys)):
     f.write(str(keys[i]) + " " + str(vals[i]) + "\n")

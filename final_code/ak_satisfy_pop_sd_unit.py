@@ -67,33 +67,31 @@ if __name__ == "__main__":
     total_objects = 0
     no_objects = 0
     popularities = []
-    req_count = []
     sizes = []
-    f = open("results/" + w_dir + "/cache_state_0_8.txt", "r")    
+    f = open("results/" + w_dir + "/cache_state_0_unit.txt", "r")
     total_sz = 0
     for l in f:
         l = l.strip().split(",")
         sz = float(l[2])
         p  = int(l[1])
         popularities.append(p)
-        sizes.append(sz)
-        req_count.append(int(l[3]))
+        sizes.append(1)
         total_objects += 1
         no_objects += 1
         total_sz += sz
         
-    pop_dst = pop("results/" + w_dir + "/joint_dst_0.txt", 0, MIL)
+    pop_dst = pop("results/" + w_dir + "/joint_dst_0_unit.txt", 0, MIL)
     obj_left = 50*MIL - len(popularities)
     popularities.extend(pop_dst.sample_popularities(obj_left))
         
     ## Assign sizes based on popularities
-    pop_sz = pop_sz_dst("results/" + w_dir + "/joint_dst_0.txt")
+    pop_sz = pop_sz_dst("results/" + w_dir + "/joint_dst_0_unit.txt")
     i = len(sizes)
     while total_sz < 10 * TB:
         p = popularities[i]
         sz = pop_sz.sample(p)
-        sizes.append(sz)        
-        total_sz += sizes[i]
+        sizes.append(1)        
+        total_sz += sz
         total_objects += 1
         no_objects    += 1
         i += 1
@@ -103,11 +101,12 @@ if __name__ == "__main__":
                            
     while no_objects < 50*MIL:
         p = popularities[i]
-        sz = pop_sz.sample(p)
-        sizes.append(sz)        
+        sizes.append(1)        
         no_objects += 1
         i += 1
-            
+
+    print(len(popularities), len(sizes))
+        
     debug = open("results/" + w_dir + "/debug.txt", "w")
 
     ## generate random trace
@@ -130,7 +129,7 @@ if __name__ == "__main__":
     no_desc = 0
     fail = 0
 
-    fd_sample = joint_dst("results/" + w_dir + "/pop_sd_0.txt", False, 2)
+    fd_sample = joint_dst("results/" + w_dir + "/pop_sd_0_unit.txt", False, 2)
     sampled_fds = []
     sampled_sds_pop = defaultdict(list)
     result_fds = []
@@ -141,7 +140,7 @@ if __name__ == "__main__":
     sz_removed = 0
     evicted_ = 0
 
-    req_count.extend([0] * (25*total_objects))
+    req_count = [0] * (25*total_objects)
     
     while curr != None and i <= t_len:
 
@@ -150,7 +149,7 @@ if __name__ == "__main__":
         
         if pp > 1:
             sd = fd_sample.sample(pp)
-            if sd > total_sz:
+            if sd > root.s:
                 continue
         else:
             sd = 0
@@ -174,30 +173,26 @@ if __name__ == "__main__":
             sz_removed += curr.s
             evicted_ += 1
 
-            sampled_fds.append(10*TB + 200000)
+            sampled_fds.append(root.s + 200)
             
-            while root.s < 10*TB:
+            if (total_objects + 1) % (50*MIL) == 0:
+                popularities_n = pop_dst.sample_popularities(50*MIL)
+                popularities.extend(popularities_n)
 
-                if (total_objects + 1) % (50*MIL) == 0:
-                    popularities_n = pop_dst.sample_popularities(50*MIL)
-                    popularities.extend(popularities_n)
-
-                    for p in popularities_n:
-                        sz = pop_sz.sample(p)
-                        sizes.append(sz)
+                for p in popularities_n:
+                    sizes.append(1)
                                 
-                total_objects += 1
-                sz = sizes[total_objects]
-                sz_added += sz
-                n = node(total_objects, sz)
-                n.set_b()                
-                descrepency, x, y = root.insertAt(root.s - 1, n, 0, curr.id, debug)
+            total_objects += 1
+            n = node(total_objects, 1)
+            n.set_b()
+            sz_added += 1
+            descrepency, x, y = root.insertAt(root.s - 1, n, 0, curr.id, debug)
             
-                if n.parent != None:
-                    root = n.parent.rebalance(debug)
+            if n.parent != None:
+                root = n.parent.rebalance(debug)
             
         else:
-            sd = random.randint(sd, sd+200000)         
+            sd = random.randint(sd, sd+200)         
 
             sampled_fds.append(sd)            
 
@@ -205,16 +200,7 @@ if __name__ == "__main__":
                 descrepency, land, o_id = root.insertAt(sd, n, 0, curr.id, debug)                            
             except:
                 print("sd : ", sd, root.s)
-                
-            land_pos.append(land)
-
-            land_obj_sz.append(sizes[o_id])
-
-            local_uniq_bytes = 0
-
-            debug.write("debugline : " + str(local_uniq_bytes) + " " + str(sd) + " " + str(root.s) + " " + str(descrepency) + "\n")
-
-            result_fds.append(sd + descrepency)
+            
 
             if n.parent != None :
                 root = n.parent.rebalance(debug)
@@ -235,33 +221,50 @@ if __name__ == "__main__":
         i += 1
 
         
-    ## Write sampled sizes to disk    
-    f = open("results/" + w_dir + "/sampled_sizes_pop_init.txt", "w")
-    f.write(",".join([str(x) for x in sizes]))
-    f.close()
-
     ## Write sampled popularities to disk
-    f = open("results/" + w_dir + "/sampled_pop_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/sampled_pop_pop_init_unit.txt", "w")
     f.write(",".join([str(x) for x in popularities]))
     f.close()
     
     # ## Write stats to disk
-    f = open("results/" + w_dir + "/sampled_fds_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/sampled_fds_pop_init_unit.txt", "w")
     for i in range(len(sampled_fds)):
         f.write(str(sampled_fds[i]) + ",")
     f.close()
 
+    ##Write req count to disk
+    f = open("results/" + w_dir + "/req_count_pop_init_unit.txt", "w")
+    for i in range(len(req_count)):
+        f.write(str(req_count[i]) + ",")
+    f.close()    
+
     # ## Write the trace to dist
-    f = open("results/" + w_dir + "/out_trace_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/out_trace_pop_init_unit.txt", "w")
     for i in range(len(c_trace)):
         f.write(str(c_trace[i]) + ",")
     f.close()    
 
-    ## Write request count stats to disk
-    f = open("results/" + w_dir + "/req_count_pop_init.txt", "w")
-    for i in range(len(req_count)):
-        f.write(str(req_count[i]) + ",")
+    obj_sizes = []
+    objects = defaultdict(lambda : 0)
+    max_o = 0
+    for o in c_trace:
+        if o > max_o:
+            max_o = o
+        objects[o] += 1
+    for o in range(0, max_o):
+        if o in objects:
+            sz = pop_sz.sample(objects[o])
+            obj_sizes.append(sz)
+        else:
+            obj_sizes.append(0)
+
+    f = open("results/" + w_dir + "/sampled_sizes_pop_init_unit.txt", "w")
+    for i in range(len(obj_sizes)):
+        f.write(str(obj_sizes[i]) + ",")
     f.close()    
+    
+
+    
 
 
 

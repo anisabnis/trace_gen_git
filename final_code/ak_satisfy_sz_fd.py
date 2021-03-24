@@ -1,4 +1,3 @@
-
 import sys
 from treelib import *
 from collections import defaultdict
@@ -26,26 +25,23 @@ if __name__ == "__main__":
     log_file = open("results/" + w_dir + "/log_file.txt", "w")
     log_file.flush()
 
-    f = open("results/" + w_dir + "/footprint_desc_0.txt", "r")
+    f = open("results/" + w_dir + "/size_sd_0.txt", "r")
     l = f.readline().strip().split(" ")
     one_hit_pr = float(l[-1])/float(l[0])
     f.close()
 
-    sz_dst = pop_opp("results/" + w_dir + "/iat_sz_0.txt", 0 , TB)
+    sz_dst = pop_opp("results/" + w_dir + "/joint_dst_0.txt", 0 , TB)
     sizes = sz_dst.sample_keys(50*MIL)
-
-    print("done sampling sizes ")
         
     total_sz   = 0
     total_objects = 0
     i = 0
-    while total_sz < 10*TB:
+    while total_sz < 5*TB:
         total_sz += sizes[total_objects]
         total_objects += 1
         if total_objects % 100000 == 0:
             print(total_objects, total_sz)
-        
-        
+                
     print("total objects : ", total_objects)
         
     debug = open("results/" + w_dir + "/debug.txt", "w")
@@ -70,8 +66,7 @@ if __name__ == "__main__":
     no_desc = 0
     fail = 0
 
-    fd_sample = pop_opp2("results/" + w_dir + "/footprint_desc_0.txt", 0, 1000*TB)
-    stack_samples = fd_sample.sample_keys(MIL)
+    fd_sample = joint_dst("results/" + w_dir + "/size_sd_0.txt")
 
     sampled_fds = []
     sampled_sds_pop = defaultdict(list)
@@ -85,12 +80,11 @@ if __name__ == "__main__":
     
     while curr != None and i <= t_len:
 
-        if k >= MIL:
-            stack_samples = fd_sample.sample_keys(MIL)
-            k = 0
-
-        sd = stack_samples[k]
-        k += 1
+        ## Sample based on size of the object
+        sz = sizes[curr.obj_id]                
+        sd = fd_sample.sample(sz)
+        if sd > total_sz:
+            continue
         
         if sd >= root.s:
             fail += 1
@@ -111,8 +105,7 @@ if __name__ == "__main__":
         c_trace.append(n.obj_id)
 
         if curr.obj_id > curr_max_seen:
-            curr_max_seen = curr.obj_id
-            
+            curr_max_seen = curr.obj_id            
             
         if end_object == False:
 
@@ -137,7 +130,7 @@ if __name__ == "__main__":
                 root = n.parent.rebalance(debug)
 
         else:
-            while root.s < 10*TB:
+            while root.s < 5*TB:
 
                 if (total_objects + 1) % (50*MIL) == 0:
                     sizes_n = sz_dst.sample_keys(50*MIL)
@@ -169,18 +162,18 @@ if __name__ == "__main__":
 
         
     ## Write sampled sizes to disk    
-    f = open("results/" + w_dir + "/sampled_sizes_0.txt", "w")
+    f = open("results/" + w_dir + "/sampled_sizes_sz.txt", "w")
     f.write(",".join([str(x) for x in sizes]))
     f.close()
         
     # ## Write stats to disk
-    f = open("results/" + w_dir + "/sampled_fds_0.txt", "w")
+    f = open("results/" + w_dir + "/sampled_fds_sz.txt", "w")
     for i in range(len(sampled_fds)):
         f.write(str(sampled_fds[i]) + ",")
     f.close()
 
     # ## Write the trace to dist
-    f = open("results/" + w_dir + "/out_trace_0.txt", "w")
+    f = open("results/" + w_dir + "/out_trace_sz.txt", "w")
     for i in range(len(c_trace)):
         f.write(str(c_trace[i]) + ",")
     f.close()    

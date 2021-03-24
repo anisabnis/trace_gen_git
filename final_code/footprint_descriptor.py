@@ -54,8 +54,19 @@ obj_mod = sys.argv[2]
 #if obj_mod > 7:
 #    sys.exit(0)
 
+if t_file == "v":
+    inp_file = "akamai2.bin"
+elif t_file == "w":
+    inp_file = "akamai1.bin"
+elif t_file.find("eu") != -1:
+    inp_file = "trace.txt"
+else:
+    sys.exit()
+
+
 ## objects are assumed to be in KB
 class cache:
+
     def __init__(self, max_sz):
         self.max_sz = max_sz
         self.items = defaultdict()
@@ -100,16 +111,20 @@ class cache:
     def insert(self, o, sz, tm):
         
         if o in self.items:            
-
+            
             n = self.items[o]
             dt = tm - n.last_access
+
+            if o == 62:
+                print(n.obj_id, n.last_access)
+
             
             if self.curr.obj_id == o:
                 return 0, dt
             
             sd = self.curr.findUniqBytes(n, self.debug) + self.curr.s + n.s
 
-            if random.random() < 0.001:
+            if random.random() < 0.0001:
                 sd1 = self.uniq_bytes(n)
                 self.debug_w.write(str(sd) + " " + str(sd1) + "\n")                                       
             
@@ -165,11 +180,15 @@ class cache:
         return sd, dt
                 
 
+if t_file == "v" or t_file == "w":
+    parser = binaryParser("results/" + t_file + "/" + inp_file)
+    parser.open()
+else:
+    parser = euParser("results/" + t_file + "/" + inp_file)
+    parser.open()
 
-parser = binaryParser("results/" + t_file + "/akamai2.bin")
-parser.open()
 
-lru = cache(1*TB)
+lru = cache(10*TB)
 
 initial_objects = list()
 initial_times = {}
@@ -212,14 +231,13 @@ obj_reqs = defaultdict(int)
 i = 0
 bytes_in_cache = 0
 line_count = 0
-
 min_tm = 100000000000000
 max_tm = 0
 
 obj, sz, tm = parser.readline()
 print("min time : ", tm)
 
-while bytes_in_cache < 1*TB:
+while bytes_in_cache < 10*TB:
 
     obj, sz, tm = parser.readline()
     
@@ -231,8 +249,6 @@ while bytes_in_cache < 1*TB:
     sz = np.ceil(float(sz)/1000)
 
     obj_reqs[obj] += 1
-
-    obj_iats[obj].append(-1)
     
     if obj not in obj_sizes:
 
@@ -258,7 +274,8 @@ lru.initialize(initial_objects, obj_sizes, initial_times)
 i = 0
 line_count = 0
 #max_len = 200000000
-max_len = 50000000
+max_len = 1000000
+#max_len = 1000000
 total_bytes_req = 0
 total_reqs = 0
 total_misses = 0
@@ -267,14 +284,16 @@ flags = 0
 
 ## Stack distance is grouped in multiples of 200 MB and inter-arrival time in 200 seconds
 while True:
-    obj, sz, tm = parser.readline()
+    try:
+        obj, sz, tm = parser.readline()
+
+    except:
+        break
+    
     line_count += 1
     
-    if line_count%100000 == 0:
-        print("Processed : ", line_count, flags, tm)
-        if tm - start_tm > 86400:
-            end_tm = tm
-            break
+    #if line_count%100000 == 0:
+    #    print("Processed : ", line_count, flags, tm)
         
 #    if obj%8 != obj_mod:
 #        continue
@@ -286,7 +305,7 @@ while True:
 
     total_bytes_req += sz
     total_reqs += 1
-    
+
     k = lru.insert(obj, sz, tm)
 
     sd, iat = k
@@ -295,8 +314,8 @@ while True:
         flags += 1
     
     if sd != -1:
-        sd = float(sd)/400000
-        sd = int(sd) * 400000
+        sd = float(sd)/200000
+        sd = int(sd) * 200000
         iat = float(iat)/200
         iat = int(iat) * 200        
         sd_distances[iat].append(sd)
@@ -313,77 +332,93 @@ while True:
         break
         
 
-### Stats Writing - write this in a differnet function -- looks dirty    
-    
-f = open("results/" + t_file + "/footprint_desc_" + str(obj_mod) + "_test.txt", "w")
-## Write the other stats into the file
-f.write(str(total_reqs) + " " + str(total_bytes_req) + " " + str(start_tm) + " " + str(end_tm) + " " + str(total_misses) + " " + str(bytes_miss) + "\n")
-iat_keys = list(sd_distances.keys())
-iat_keys.sort()
-for iat in iat_keys:
-    keys, vals = convert_to_dict(sd_distances[iat], total_reqs)
-    for i in range(len(keys)):
-        f.write(str(iat) + " " + str(keys[i]) + " " + str(vals[i]) + "\n")
+end_tm = tm
+
+#print(obj_iats[62])
+
+### Stats Writing - write this in a differnet function -- looks dirty
+f = open("tmp_file.txt", "w")
+for o in obj_iats:
+    f.write(str(o))
+    f.write(" ")
+    f.write(str(obj_sizes[o]))
+    f.write(" ")
+    rstat = obj_iats[o]
+    rstat = [str(x) for x in rstat]
+    f.write(" ".join(rstat))
+    f.write("\n")
 f.close()
 
-avg_obj_iat = defaultdict(int)
-no_objects = 0
-one_hits = 0
-for obj in obj_iats:
-    if len(obj_iats[obj]) > 1:
-        iat = np.mean(obj_iats[obj][1:])/200
-        iat = int(iat) * 200        
-    else:
-        iat = -1
-        one_hits += 1
+
+# f = open("results/" + t_file + "/footprint_desc_" + str(obj_mod) + "_test.txt", "w")
+# ## Write the other stats into the file
+# f.write(str(total_reqs) + " " + str(total_bytes_req) + " " + str(start_tm) + " " + str(end_tm) + " " + str(total_misses) + " " + str(bytes_miss) + "\n")
+# iat_keys = list(sd_distances.keys())
+# iat_keys.sort()
+# for iat in iat_keys:
+#     keys, vals = convert_to_dict(sd_distances[iat], total_reqs)
+#     for i in range(len(keys)):
+#         f.write(str(iat) + " " + str(keys[i]) + " " + str(vals[i]) + "\n")
+# f.close()
+
+# avg_obj_iat = defaultdict(int)
+# no_objects = 0
+# one_hits = 0
+# for obj in obj_iats:
+#     if len(obj_iats[obj]) > 1:
+#         iat = np.mean(obj_iats[obj][1:])/200
+#         iat = int(iat) * 200        
+#     else:
+#         iat = -1
+#         one_hits += 1
         
-    avg_obj_iat[obj] = iat
-    no_objects += 1
+#     avg_obj_iat[obj] = iat
+#     no_objects += 1
     
-f = open("results/" + t_file + "/one_hits_" + str(obj_mod) + ".txt", "w")
-f.write(str(one_hits) + " " + str(no_objects) + "\n")
-f.close()
+# f = open("results/" + t_file + "/one_hits_" + str(obj_mod) + ".txt", "w")
+# f.write(str(one_hits) + " " + str(no_objects) + "\n")
+# f.close()
 
 
-#write iat sz distribution
-iat_sz = defaultdict(list)
-for obj in obj_sizes:
-    iat = avg_obj_iat[obj]
-    iat_sz[iat].append(obj_sizes[obj])
+# #write iat sz distribution
+# iat_sz = defaultdict(list)
+# for obj in obj_sizes:
+#     iat = avg_obj_iat[obj]
+#     iat_sz[iat].append(obj_sizes[obj])
     
-f = open("results/" + t_file + "/iat_sz_" + str(obj_mod) + ".txt", "w")
-j = 0
-for iat in iat_sz:
-    f.write(str(iat) + "\n")
-    keys, vals = convert_to_dict(iat_sz[iat], no_objects)
+# f = open("results/" + t_file + "/iat_sz_" + str(obj_mod) + ".txt", "w")
+# j = 0
+# for iat in iat_sz:
+#     f.write(str(iat) + "\n")
+#     keys, vals = convert_to_dict(iat_sz[iat], no_objects)
 
-    j += 1
-    if j % 10000 == 0:
-        print("Parsed : ", j)
+#     j += 1
+#     if j % 10000 == 0:
+#         print("Parsed : ", j)
         
-    for i in range(len(keys)):
-        f.write(str(keys[i]) + " " + str(vals[i]) + "\n")
-f.close()
+#     for i in range(len(keys)):
+#         f.write(str(keys[i]) + " " + str(vals[i]) + "\n")
+# f.close()
 
-## Write iat pop distribution
-iat_pop = defaultdict(list)
-for obj in obj_reqs:
-    iat = avg_obj_iat[obj]
-    iat_pop[iat].append(obj_reqs[obj])
+# ## Write iat pop distribution
+# iat_pop = defaultdict(list)
+# for obj in obj_reqs:
+#     iat = avg_obj_iat[obj]
+#     iat_pop[iat].append(obj_reqs[obj])
  
-j = 0
-f = open("results/" + t_file + "/iat_pop_" + str(obj_mod) + ".txt", "w")
-for iat in iat_pop:
-    f.write(str(iat) + "\n")
-    keys, vals = convert_to_dict(iat_pop[iat], no_objects)
+# j = 0
+# f = open("results/" + t_file + "/iat_pop_" + str(obj_mod) + ".txt", "w")
+# for iat in iat_pop:
+#     f.write(str(iat) + "\n")
+#     keys, vals = convert_to_dict(iat_pop[iat], no_objects)
 
-    j += 1
-    if j % 10000 == 0:
-        print("Parsed : ", j)
+#     j += 1
+#     if j % 10000 == 0:
+#         print("Parsed : ", j)
     
-    for i in range(len(keys)):
-        f.write(str(keys[i]) + " " + str(vals[i]) + "\n")    
-f.close()
+#     for i in range(len(keys)):
+#         f.write(str(keys[i]) + " " + str(vals[i]) + "\n")    
+# f.close()
 
 # pop_sz = defaultdict(list)
 # for obj in obj_sizes:

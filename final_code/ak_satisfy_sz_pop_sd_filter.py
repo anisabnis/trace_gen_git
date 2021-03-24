@@ -24,44 +24,6 @@ if __name__ == "__main__":
     
     log_file = open("results/" + w_dir + "/log_file.txt", "w")
     log_file.flush()
-
-
-    # ### Assign popularities and sz based on the stack distance distribution
-    # total_sz = 0
-    # sizes = []
-    # popularities = []
-    # total_objects = 0
-    # no_objects = 0
-
-    # ## Sampling distributions
-    # #fd_sample_opp = joint_dst("results/" + w_dir + "/pop_sd_0.txt", True, 0, 2)
-    # #pop_sz = pop_sz_dst("results/" + w_dir + "/joint_dst_0.txt")
-    # pop_dst = pop("results/" + w_dir + "/joint_dst_0.txt", 0, 100*MIL)
-    # pr_one = pop_dst.getPr(4)
-    # print(pr_one)
-    
-    # asdf
-    # ## Do it for 50 million objects
-    # for i in range(50*MIL):
-
-    #     if np.random.random() < pr_one:
-    #         pp = 1
-    #     else:
-    #         pp = fd_sample_opp.sample(total_sz)
-
-    #     sz = pop_sz.sample(pp)
-    #     total_sz += sz
-    #     sizes.append(sz)
-    #     popularities.append(pp)
-        
-    #     if total_sz < 10*TB:
-    #         total_objects += 1
-
-    #     no_objects += 1
-
-    #     if no_objects % 10000 == 0:
-    #         print("No objects : ", no_objects)
-
         
     ## Assign popularities and sizes to each object from the joint distribution
     total_objects = 0
@@ -81,18 +43,20 @@ if __name__ == "__main__":
         total_objects += 1
         no_objects += 1
         total_sz += sz
-        
-    pop_dst = pop("results/" + w_dir + "/joint_dst_0.txt", 0, MIL)
-    obj_left = 50*MIL - len(popularities)
-    popularities.extend(pop_dst.sample_popularities(obj_left))
+
+
+    i = len(sizes)
+    ## First sample sizes
+    sz_dst = pop_opp("results/" + w_dir + "/joint_dst_0_sz.txt", 0, TB)
+    obj_left = 50*MIL - len(sizes)
+    sizes.extend(sz_dst.sample_keys(obj_left))
         
     ## Assign sizes based on popularities
-    pop_sz = pop_sz_dst("results/" + w_dir + "/joint_dst_0.txt")
-    i = len(sizes)
+    sz_pop = pop_sz_dst("results/" + w_dir + "/joint_dst_0_sz.txt", True)
     while total_sz < 10 * TB:
-        p = popularities[i]
-        sz = pop_sz.sample(p)
-        sizes.append(sz)        
+        sz = sizes[i]
+        p = sz_pop.sample(sz)
+        popularities.append(p)
         total_sz += sizes[i]
         total_objects += 1
         no_objects    += 1
@@ -100,11 +64,11 @@ if __name__ == "__main__":
 
         if total_objects % 100000 == 0:
             print("Total objects : ", total_objects)
-                           
+            
     while no_objects < 50*MIL:
-        p = popularities[i]
-        sz = pop_sz.sample(p)
-        sizes.append(sz)        
+        sz = sizes[i]
+        p  = sz_pop.sample(sz)
+        popularities.append(p)        
         no_objects += 1
         i += 1
             
@@ -130,7 +94,13 @@ if __name__ == "__main__":
     no_desc = 0
     fail = 0
 
-    fd_sample = joint_dst("results/" + w_dir + "/pop_sd_0.txt", False, 2)
+    fd_sample = joint_dst("results/" + w_dir + "/sz_sd_0.txt", False, 0)
+
+    fd_sample_2 = pop_opp3("results/" + w_dir + "/sz_sd_0.txt", 1, TB)
+    sizes_req = fd_sample_2.p_keys
+    sizes_pr  = fd_sample_2.pr
+    accept_pr = defaultdict(lambda : 1)
+    
     sampled_fds = []
     sampled_sds_pop = defaultdict(list)
     result_fds = []
@@ -142,14 +112,33 @@ if __name__ == "__main__":
     evicted_ = 0
 
     req_count.extend([0] * (25*total_objects))
-    
+
+
+    def recompute_accept_pr(sizes_seen):
+        req_count = defaultdict(lambda : 0)
+        total = 0
+        for sz in sizes_seen:
+            req_count[sz] += 1
+            total += 1
+        acc_pr = defaultdict(lambda : 1)
+        for i, sz in enumerate(sizes_req):
+            if sz in req_count:
+                p = float(req_count[sz])/total
+                acc_pr[sz] = sizes_pr[i]/p
+            else:
+                acc_pr[sz] = 1
+        return acc_pr
+            
+
+    sizes_seen = []
     while curr != None and i <= t_len:
 
-        ## Sample based on popularity
-        pp = popularities[curr.obj_id]        
+        ## Sample based on size of the object
+        sz = sizes[curr.obj_id]        
+        sizes_seen.append(sz)
         
-        if pp > 1:
-            sd = fd_sample.sample(pp)
+        if sz > 0:
+            sd = fd_sample.sample(sz)
             if sd > total_sz:
                 continue
         else:
@@ -170,7 +159,8 @@ if __name__ == "__main__":
         req_count[curr.obj_id] += 1            
 
         ## Introduce a new object, ending the current object
-        if req_count[curr.obj_id] >= popularities[curr.obj_id]:
+        #if req_count[curr.obj_id] >= popularities[curr.obj_id]:
+        if np.random.random() > accept_pr[sz]:
             sz_removed += curr.s
             evicted_ += 1
 
@@ -179,12 +169,12 @@ if __name__ == "__main__":
             while root.s < 10*TB:
 
                 if (total_objects + 1) % (50*MIL) == 0:
-                    popularities_n = pop_dst.sample_popularities(50*MIL)
-                    popularities.extend(popularities_n)
+                    sizes_n = sz_dst.sample_keys(50*MIL)
+                    sizes.extend(sizes_n)
 
-                    for p in popularities_n:
-                        sz = pop_sz.sample(p)
-                        sizes.append(sz)
+                    for sz in sizes_n:
+                        p = sz_pop.sample(sz)
+                        popularities.append(p)
                                 
                 total_objects += 1
                 sz = sizes[total_objects]
@@ -231,34 +221,42 @@ if __name__ == "__main__":
             print("Trace computed : " +  str(i) + " " +  str(datetime.datetime.now()) +  " " + str(root.s) + " " + str(total_objects) + " " + str(curr_max_seen) + " fail : " + str(fail) + " sz added : " + str(sz_added) + " sz_removed : " + str(sz_removed) + " evicted : " +  str(evicted_))
             log_file.flush()
 
+
+        if i % 100000 == 0:
+            accept_pr = recompute_accept_pr(sizes_seen)
+            sizes_seen = []
+            
+
+            
         curr = next
         i += 1
 
         
     ## Write sampled sizes to disk    
-    f = open("results/" + w_dir + "/sampled_sizes_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/sampled_sizes_sz_pop_init.txt", "w")
     f.write(",".join([str(x) for x in sizes]))
     f.close()
 
     ## Write sampled popularities to disk
-    f = open("results/" + w_dir + "/sampled_pop_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/sampled_pop_sz_pop_init.txt", "w")
     f.write(",".join([str(x) for x in popularities]))
     f.close()
     
     # ## Write stats to disk
-    f = open("results/" + w_dir + "/sampled_fds_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/sampled_fds_sz_pop_init.txt", "w")
     for i in range(len(sampled_fds)):
         f.write(str(sampled_fds[i]) + ",")
     f.close()
 
     # ## Write the trace to dist
-    f = open("results/" + w_dir + "/out_trace_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/out_trace_sz_pop_init.txt", "w")
     for i in range(len(c_trace)):
         f.write(str(c_trace[i]) + ",")
     f.close()    
 
-    ## Write request count stats to disk
-    f = open("results/" + w_dir + "/req_count_pop_init.txt", "w")
+    ## See if each object is represent sufficient number of times
+    ## in the trace
+    f = open("results/" + w_dir + "/req_count_sz_pop_init.txt", "w")
     for i in range(len(req_count)):
         f.write(str(req_count[i]) + ",")
     f.close()    

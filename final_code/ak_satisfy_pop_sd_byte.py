@@ -130,7 +130,7 @@ if __name__ == "__main__":
     no_desc = 0
     fail = 0
 
-    fd_sample = joint_dst("results/" + w_dir + "/pop_sd_0.txt", False, 2)
+    fd_sample = joint_dst("results/" + w_dir + "/byte_popularity_sd_0.txt", False, 2)
     sampled_fds = []
     sampled_sds_pop = defaultdict(list)
     result_fds = []
@@ -236,29 +236,29 @@ if __name__ == "__main__":
 
         
     ## Write sampled sizes to disk    
-    f = open("results/" + w_dir + "/sampled_sizes_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/sampled_sizes_pop_init_byte.txt", "w")
     f.write(",".join([str(x) for x in sizes]))
     f.close()
 
     ## Write sampled popularities to disk
-    f = open("results/" + w_dir + "/sampled_pop_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/sampled_pop_pop_init_byte.txt", "w")
     f.write(",".join([str(x) for x in popularities]))
     f.close()
     
     # ## Write stats to disk
-    f = open("results/" + w_dir + "/sampled_fds_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/sampled_fds_pop_init_byte.txt", "w")
     for i in range(len(sampled_fds)):
         f.write(str(sampled_fds[i]) + ",")
     f.close()
 
     # ## Write the trace to dist
-    f = open("results/" + w_dir + "/out_trace_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/out_trace_pop_init_byte.txt", "w")
     for i in range(len(c_trace)):
         f.write(str(c_trace[i]) + ",")
     f.close()    
 
     ## Write request count stats to disk
-    f = open("results/" + w_dir + "/req_count_pop_init.txt", "w")
+    f = open("results/" + w_dir + "/req_count_pop_init_byte.txt", "w")
     for i in range(len(req_count)):
         f.write(str(req_count[i]) + ",")
     f.close()    
