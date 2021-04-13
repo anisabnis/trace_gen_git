@@ -7,7 +7,7 @@ import numpy.fft as fft
 import cmath
 
 TB = 1000000000
-epsilon=1e-17
+epsilon=0
 
 # Floor for st and ss
 def floor(t_set, t):
@@ -76,7 +76,7 @@ def pdf_2_cdf_sd(ss):
 
      i += 1
 
-def f_get_frac_misses(f_out, st, rb_total, res_fd, times, misses, time_lt, sd_lt):
+def f_get_frac_misses(f_out, st, rb_total, res_fd, times, misses, time_lt, sd_lt, b_misses):
     frac_misses = 0        
     
     for t in sorted(st.keys()):
@@ -84,14 +84,14 @@ def f_get_frac_misses(f_out, st, rb_total, res_fd, times, misses, time_lt, sd_lt
             if s > sd_lt or t > time_lt:
                 frac_misses += st[t][s][0]
 
-    return frac_misses
+    return frac_misses, frac_misses
 
 # Print stdtime
-def f_print_out_st(f_out, st, rb_total, res_fd, times, misses, frac_misses):
+def f_print_out_st(f_out, st, rb_total, res_fd, times, misses, frac_misses, b_misses, frac_b_misses):
 
     with open("results/" + str(res_fd) + "/" + f_out , 'w') as f:
         
-        f.write(str(rb_total[0]) + " " + str(rb_total[1]) + " " + str(times[0]) + " " + str(times[1]) + " " + str(misses + int(frac_misses * rb_total[0])) + "\n")
+        f.write(str(rb_total[0]) + " " + str(rb_total[1]) + " " + str(times[0]) + " " + str(times[1]) + " " + str(misses + int(frac_misses * rb_total[0])) + " " + str(b_misses + int(frac_misses * rb_total[1])) + "\n")
     
         for t in sorted(st.keys()):
                 for s in sorted(st[t].keys()):
@@ -171,7 +171,7 @@ def convolve_2d_fft(st1, st2, st12, st1_int, st2_int, rate1, rate2, sd_gran):
 
 
 # st generator - st[t][s] = (req_frac, bytes_frac)
-def st_gen(st, trace, iat_gran, sd_gran, rb_total, rates, times, res_dir, misses):
+def st_gen(st, trace, iat_gran, sd_gran, rb_total, rates, times, res_dir, misses, b_misses):
 
     req_total = 0
     bytes_total = 0
@@ -190,6 +190,7 @@ def st_gen(st, trace, iat_gran, sd_gran, rb_total, rates, times, res_dir, misses
         rb_total.append((req_total, bytes_total))
 
         misses.append(int(l[4]))
+        b_misses.append(int(float(l[5])))
         
         t = -1
         
@@ -198,7 +199,7 @@ def st_gen(st, trace, iat_gran, sd_gran, rb_total, rates, times, res_dir, misses
             l = l.strip().split()
             t = (float(l[0]) // iat_gran) * iat_gran
                 
-            sd = max((int(float(l[1])) // sd_gran) * sd_gran, sd_gran)
+            sd = (int(float(l[1])) // sd_gran) * sd_gran
             req_frac = float(l[2])
             bytes_frac = float(l[2])
             
@@ -234,9 +235,9 @@ if __name__ == "__main__":
     out_name = sys.argv[5]
     res_dir = sys.argv[6]
 
-    if res_dir == "v" or res_dir =="v_c":
-        time_lt = 400000
-        sd_lt   = 25 * TB
+    if res_dir == "v" or res_dir =="tc":
+        time_lt = 4000000
+        sd_lt   = 100 * TB
     else:
         time_lt = 40000
         sd_lt   = 25 * TB
@@ -247,22 +248,24 @@ if __name__ == "__main__":
     rates = []
     times = []
     misses = []
+    b_misses = []
     
     # IAT and stack distance granularity
-    iat_gran = 400
-    sd_gran = 400000
+    iat_gran = 200
+    sd_gran = 200000
 
     # st (stdtime)
     st1 = {}
-    st_gen(st1, trace_st1, iat_gran, sd_gran, rb_total, rates, times, res_dir, misses)
+    st_gen(st1, trace_st1, iat_gran, sd_gran, rb_total, rates, times, res_dir, misses, b_misses)
 
     st2 = {}
-    st_gen(st2, trace_st2, iat_gran, sd_gran, rb_total, rates, times, res_dir, misses)
+    st_gen(st2, trace_st2, iat_gran, sd_gran, rb_total, rates, times, res_dir, misses, b_misses)
 
     rate1 = rate1 * rates[0]
     rate2 = rate2 * rates[1]
 
     total_misses = misses[0] + misses[1]
+    b_total_misses = b_misses[0] + b_misses[1]
     
     st12 = {}
 
@@ -277,10 +280,10 @@ if __name__ == "__main__":
     st2_int = {}
     convolve_2d_fft(st1, st2, st12, st1_int, st2_int, rate1, rate2, sd_gran)
 
-    frac = f_get_frac_misses(stdtime_out, st12, rb_total[2], res_dir, times[2], total_misses, time_lt, sd_lt)
+    frac, frac_b = f_get_frac_misses(stdtime_out, st12, rb_total[2], res_dir, times[2], total_misses, time_lt, sd_lt, b_total_misses)
 
     print("frac : ", frac)
     
-    f_print_out_st(stdtime_out, st12, rb_total[2], res_dir, times[2], total_misses, frac)
+    f_print_out_st(stdtime_out, st12, rb_total[2], res_dir, times[2], total_misses, frac, b_total_misses, frac_b)
 
 

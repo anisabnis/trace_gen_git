@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     MAX_SD = 0
     ## get maximum stack distance
-    f = open("results/" + w_dir + "/byte_footprint_desc_" + str(tc) +".txt", "r")
+    f = open("results/" + w_dir + "/calculus_footprint_desc_" + str(tc) +".txt", "r")
     for l in f:
         l = l.strip().split(" ")
         sd = int(float(l[1]))
@@ -35,19 +35,19 @@ if __name__ == "__main__":
 
     if w_dir == "tc":
         MAX_SD = min(1.5*TB, MAX_SD)
+    elif w_dir == "sm":
+        MAX_SD = min(2.8*TB, MAX_SD)
     else:
         MAX_SD = min(10*TB, MAX_SD)
+        
 
-    print(MAX_SD)
         
     log_file = open("results/" + w_dir + "/log_file_" + str(tc) + ".txt", "w")
     log_file.flush()
 
     sz_dst = pop_opp("results/" + w_dir + "/iat_sz_" + str(tc) + ".txt", 0 , TB)
     sizes = sz_dst.sample_keys(70*MIL)
-    sizes_n = sz_dst.sample_keys(70*MIL)
-    sizes.extend(sizes_n)
-                    
+
     print("done sampling sizes ")
         
     total_sz   = 0
@@ -58,7 +58,8 @@ if __name__ == "__main__":
         total_objects += 1
         if total_objects % 100000 == 0:
             print(total_objects, total_sz)
-                
+        
+        
     print("total objects : ", total_objects)
         
     debug = open("results/" + w_dir + "/debug_" + str(tc) + ".txt", "w")
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     no_desc = 0
     fail = 0
 
-    fd_sample = byte_sd("results/" + w_dir + "/byte_footprint_desc_" + str(tc) +".txt", 0, 1000*TB)
+    fd_sample = object_sd("results/" + w_dir + "/calculus_footprint_desc_" + str(tc) +".txt", 0, 1000*TB)
     stack_samples = fd_sample.sample_keys([], [], 1000)
     land_obj_sz = []
 
@@ -150,7 +151,7 @@ if __name__ == "__main__":
             while root.s < MAX_SD:
 
                 if (total_objects + 1) % (70*MIL) == 0:
-                    sizes_n = sz_dst.sample_keys(70*MIL)
+                    sizes_n = sz_dst.sample_keys(50*MIL)
                     sizes.extend(sizes_n)
                 
                 total_objects += 1
@@ -179,18 +180,18 @@ if __name__ == "__main__":
 
         
     ## Write sampled sizes to disk    
-    f = open("results/" + w_dir + "/byte_sampled_sizes_" +str(tc) + ".txt", "w")
+    f = open("results/" + w_dir + "/calculus_sampled_sizes_" +str(tc) + ".txt", "w")
     f.write(",".join([str(x) for x in sizes]))
     f.close()
         
     # ## Write stats to disk
-    f = open("results/" + w_dir + "/byte_sampled_fds_" + str(tc) + ".txt", "w")
+    f = open("results/" + w_dir + "/calculus_sampled_fds_" + str(tc) + ".txt", "w")
     for i in range(len(sampled_fds)):
         f.write(str(sampled_fds[i]) + ",")
     f.close()
 
     # ## Write the trace to dist
-    f = open("results/" + w_dir + "/byte_out_trace_" + str(tc) + ".txt", "w")
+    f = open("results/" + w_dir + "/calculus_out_trace_" + str(tc) + ".txt", "w")
     for i in range(len(c_trace)):
         f.write(str(c_trace[i]) + ",")
     f.close()    

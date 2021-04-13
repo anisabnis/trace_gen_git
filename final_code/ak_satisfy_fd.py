@@ -1,4 +1,3 @@
-
 import sys
 from treelib import *
 from collections import defaultdict
@@ -22,24 +21,39 @@ if __name__ == "__main__":
     
     t_len = int(sys.argv[1])
     w_dir = sys.argv[2]
-    
-    log_file = open("results/" + w_dir + "/log_file.txt", "w")
-    log_file.flush()
+    tc = sys.argv[3]
 
-    f = open("results/" + w_dir + "/footprint_desc_0.txt", "r")
-    l = f.readline().strip().split(" ")
-    one_hit_pr = float(l[-1])/float(l[0])
+    MAX_SD = 0
+    ## get maximum stack distance
+    f = open("results/" + w_dir + "/footprint_desc_" + str(tc) +".txt", "r")
+    for l in f:
+        l = l.strip().split(" ")
+        sd = int(float(l[1]))
+        if sd > MAX_SD:
+            MAX_SD = sd
     f.close()
 
-    sz_dst = pop_opp("results/" + w_dir + "/iat_sz_0.txt", 0 , TB)
-    sizes = sz_dst.sample_keys(50*MIL)
+    if w_dir == "tc":
+        MAX_SD = min(1.5*TB, MAX_SD)
+    elif w_dir == "sm":
+        MAX_SD = min(2.8*TB, MAX_SD)
+    else:
+        MAX_SD = min(10*TB, MAX_SD)
+        
+
+        
+    log_file = open("results/" + w_dir + "/log_file_" + str(tc) + ".txt", "w")
+    log_file.flush()
+
+    sz_dst = pop_opp("results/" + w_dir + "/iat_sz_" + str(tc) + ".txt", 0 , TB)
+    sizes = sz_dst.sample_keys(70*MIL)
 
     print("done sampling sizes ")
         
     total_sz   = 0
     total_objects = 0
     i = 0
-    while total_sz < 10*TB:
+    while total_sz < MAX_SD:
         total_sz += sizes[total_objects]
         total_objects += 1
         if total_objects % 100000 == 0:
@@ -48,7 +62,7 @@ if __name__ == "__main__":
         
     print("total objects : ", total_objects)
         
-    debug = open("results/" + w_dir + "/debug.txt", "w")
+    debug = open("results/" + w_dir + "/debug_" + str(tc) + ".txt", "w")
 
     ## generate random trace
     trace = range(total_objects)
@@ -70,40 +84,44 @@ if __name__ == "__main__":
     no_desc = 0
     fail = 0
 
-    fd_sample = pop_opp2("results/" + w_dir + "/footprint_desc_0.txt", 0, 1000*TB)
-    stack_samples = fd_sample.sample_keys(MIL)
-
-    sampled_fds = []
-    sampled_sds_pop = defaultdict(list)
-    result_fds = []
-    land_pos = []
+    fd_sample = object_sd("results/" + w_dir + "/footprint_desc_" + str(tc) +".txt", 0, 1000*TB)
+    stack_samples = fd_sample.sample_keys([], [], 1000)
     land_obj_sz = []
 
     sz_added   = 0
     sz_removed = 0
     evicted_ = 0
+
+    sizes_seen = []
+    sds_seen   = []
+
+    sampled_fds = []
     
     while curr != None and i <= t_len:
 
-        if k >= MIL:
-            stack_samples = fd_sample.sample_keys(MIL)
+        if k >= 1000:
+            stack_samples = fd_sample.sample_keys(sizes_seen, sds_seen, 1000)
+            sizes_seen = []
+            sds_seen = []
             k = 0
 
         sd = stack_samples[k]
-        k += 1
+        sds_seen.append(sd)
+        sizes_seen.append(curr.s)
         
-        if sd >= root.s:
-            fail += 1
-            continue
-            
+        k += 1                    
         end_object = False
         ## Introduce a new object
-        if random.random() < one_hit_pr:
+        if sd < 0:
             end_object = True
             sz_removed += curr.s
             evicted_ += 1
         else:
             sd = random.randint(sd, sd+200000)         
+
+        if sd >= root.s:
+            fail += 1
+            continue
             
         n  = node(curr.obj_id, curr.s)        
         n.set_b()
@@ -113,6 +131,7 @@ if __name__ == "__main__":
         if curr.obj_id > curr_max_seen:
             curr_max_seen = curr.obj_id
             
+        sampled_fds.append(sd)
             
         if end_object == False:
 
@@ -121,25 +140,17 @@ if __name__ == "__main__":
             except:
                 print("sd : ", sd, root.s)
                 
-            land_pos.append(land)
-
-            land_obj_sz.append(sizes[o_id])
-
             local_uniq_bytes = 0
 
             debug.write("debugline : " + str(local_uniq_bytes) + " " + str(sd) + " " + str(root.s) + " " + str(descrepency) + "\n")
-
-            sampled_fds.append(sd)
-
-            result_fds.append(sd + descrepency)
 
             if n.parent != None :
                 root = n.parent.rebalance(debug)
 
         else:
-            while root.s < 10*TB:
+            while root.s < MAX_SD:
 
-                if (total_objects + 1) % (50*MIL) == 0:
+                if (total_objects + 1) % (70*MIL) == 0:
                     sizes_n = sz_dst.sample_keys(50*MIL)
                     sizes.extend(sizes_n)
                 
@@ -169,18 +180,18 @@ if __name__ == "__main__":
 
         
     ## Write sampled sizes to disk    
-    f = open("results/" + w_dir + "/sampled_sizes_0.txt", "w")
+    f = open("results/" + w_dir + "/sampled_sizes_" +str(tc) + ".txt", "w")
     f.write(",".join([str(x) for x in sizes]))
     f.close()
         
     # ## Write stats to disk
-    f = open("results/" + w_dir + "/sampled_fds_0.txt", "w")
+    f = open("results/" + w_dir + "/sampled_fds_" + str(tc) + ".txt", "w")
     for i in range(len(sampled_fds)):
         f.write(str(sampled_fds[i]) + ",")
     f.close()
 
     # ## Write the trace to dist
-    f = open("results/" + w_dir + "/out_trace_0.txt", "w")
+    f = open("results/" + w_dir + "/out_trace_" + str(tc) + ".txt", "w")
     for i in range(len(c_trace)):
         f.write(str(c_trace[i]) + ",")
     f.close()    

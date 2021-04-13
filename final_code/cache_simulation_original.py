@@ -10,6 +10,8 @@ cache_size = int(sys.argv[2]) * 1000000
 ignore = int(sys.argv[3]) * 1000000
 mod_u = int(sys.argv[4])
 
+eviction_age = defaultdict(lambda : [])
+
 obj_reqs = 0
 byte_reqs = 0
 obj_hits_fifo = 0
@@ -42,8 +44,10 @@ for cnt in range(1):
     inner_lines = 0
 
     while True:
-
-        r, obj_sz, t = input.readline()
+        try:
+            r, obj_sz, t = input.readline()
+        except:
+            break
 
         i += 1
         
@@ -79,7 +83,7 @@ for cnt in range(1):
 
         ## Make request to LRU
         if lru_c.get(r) == -1:
-            lru_c.put(r, obj_sz)
+            lru_c.put(r, obj_sz, eviction_age, inner_lines)
         else:
             #if overall_reqs > 1000000:
             if i > ignore:
@@ -98,10 +102,31 @@ for cnt in range(1):
             byte_hits_lru = 0
             
 
-        if inner_lines > 2000000000:
+        if inner_lines > 50000000:
             break
 
 f.close()
+
+
+age_dst = []
+## Parse eviction age
+for obj in eviction_age:
+    times = eviction_age[obj]
+
+    for i in range(int(len(times)/2)):
+        enter = times[2*i]
+        try:
+            leave = times[2*i + 1]
+        except:
+            break
+
+    age_dst.append(leave - enter)
+
+
+f = open("results/" + str(tc) + "/age_distribution_original.txt", "w")
+f.write(",".join([str(x) for x in age_dst]))
+f.close()
+
 
 # print("number of objects : ", len(objects))
 

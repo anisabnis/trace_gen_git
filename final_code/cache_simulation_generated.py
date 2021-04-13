@@ -9,6 +9,8 @@ tc = sys.argv[1]
 cache_size = int(sys.argv[2]) * 1000000
 ignore = int(sys.argv[3]) * 1000000
 
+eviction_age = defaultdict(lambda : [])
+
 f = open("results/" + str(tc) + "/out_trace_pop_init_byte.txt" , "r")
 reqs = f.readline()
 reqs = reqs.strip().split(",")
@@ -68,7 +70,7 @@ for r in reqs:
 
     ## Make request to LRU
     if lru_c.get(r) == -1:
-        lru_c.put(r, obj_sz)
+        lru_c.put(r, obj_sz, eviction_age, i)
     else:
         if i > ignore:
             obj_hits_lru += 1
@@ -86,3 +88,25 @@ for r in reqs:
         byte_hits_lru = 0    
 
 f.close()
+
+age_dst = []
+## Parse eviction age
+for obj in eviction_age:
+    times = eviction_age[obj]
+
+    for i in range(int(len(times)/2)):
+        enter = times[2*i]
+        try:
+            leave = times[2*i + 1]
+        except:
+            break
+
+    age_dst.append(leave - enter)
+
+f = open("results/" + str(tc) + "/age_distribution_generated.txt", "w")
+f.write(",".join([str(x) for x in age_dst]))
+f.close()
+        
+        
+        
+        
