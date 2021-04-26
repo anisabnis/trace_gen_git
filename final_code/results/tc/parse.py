@@ -9,13 +9,10 @@ for l in f:
     l = l.strip().split(" ")
     k1 = int(l[0])
     k2 = int(float(l[1])/TB)
-    a[k1][k2] += float(l[2])
+    a[k1][k2] = float(l[2])
 
 #ps = [128, 256, 328]
-#ps = [2, 3 ,4, 100, 101, 102, 103, 201, 271287,2048,1812, 46765, 35110, 19856,310,951, 1083,2001, 2010, 3000, 4001, 512, 851, 903]
-ps = [270]
-#ps = [310]
-#print(a[310])
+ps = [271287,2048,1812, 46765, 35110, 19856,310,951, 1083,2001, 2010, 3000, 4001, 512, 851, 903]
 for p in ps:
     vals = list(a[p].keys())
     vals.sort()
@@ -25,7 +22,6 @@ for p in ps:
         prs.append(a[p][v])
         sum_prs += a[p][v]
 
-    print(sum_prs)
     prs = [pr/sum_prs for pr in prs]
     for i in range(len(prs)):
         print(p, prs[i], vals[i])

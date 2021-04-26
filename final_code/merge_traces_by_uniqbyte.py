@@ -30,9 +30,9 @@ dir = sys.argv[1]
 tc1 = int(sys.argv[2])
 tc2 = int(sys.argv[3])
 
-br1 = computeUniqByteRate("results/" + str(dir) + "/footprint_desc_" + str(tc1) + ".txt") * 10
+br1 = computeUniqByteRate("results/" + str(dir) + "/footprint_desc_" + str(tc1) + ".txt") 
 
-br2 = computeUniqByteRate("results/" + str(dir) + "/footprint_desc_" + str(tc2) + ".txt") * 10
+br2 = computeUniqByteRate("results/" + str(dir) + "/footprint_desc_" + str(tc2) + ".txt") 
 
 
 print(br1, br2)
@@ -81,7 +81,7 @@ while True:
             all_reqs.append([i, str(t2[i2])+":"+str(tc2), sizes2[int(t2[i2])]])
             i2 += 1
 
-        random.shuffle(all_reqs)
+        #random.shuffle(all_reqs)
         for m in all_reqs:
             f.write(str(m[0]) + " " + str(m[1]) + " " + str(m[2]) + "\n")
             

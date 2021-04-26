@@ -91,7 +91,7 @@ def f_print_out_st(f_out, st, rb_total, res_fd, times, misses, frac_misses, b_mi
 
     with open("results/" + str(res_fd) + "/" + f_out , 'w') as f:
         
-        f.write(str(rb_total[0]) + " " + str(rb_total[1]) + " " + str(times[0]) + " " + str(times[1]) + " " + str(misses + int(frac_misses * rb_total[0])) + " " + str(b_misses + int(frac_misses * rb_total[1])) + "\n")
+        f.write(str(rb_total[0]) + " " + str(rb_total[1]) + " " + str(times[0]) + " " + str(times[1]) + " " + str(misses + int(frac_misses * rb_total[0])) + " " + str(b_misses + int(frac_b_misses * rb_total[1])) + "\n")
     
         for t in sorted(st.keys()):
                 for s in sorted(st[t].keys()):
@@ -183,7 +183,7 @@ def st_gen(st, trace, iat_gran, sd_gran, rb_total, rates, times, res_dir, misses
 
         req_total = int(l[0])
         bytes_total = int(float(l[1]))
-        total_rate = bytes_total/(int(l[3]) - int(l[2]))
+        total_rate = req_total/(int(l[3]) - int(l[2]))
 
         times.append((int(l[2]), int(l[3])))
         rates.append(total_rate)                                
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     out_name = sys.argv[5]
     res_dir = sys.argv[6]
 
-    if res_dir == "v" or res_dir =="tc":
+    if res_dir == "v" or res_dir =="tc" or res_dir == "eu":
         time_lt = 4000000
         sd_lt   = 100 * TB
     else:

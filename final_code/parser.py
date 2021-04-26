@@ -1,4 +1,5 @@
 import struct
+import gzip
 from collections import defaultdict
 
 class parser:
@@ -75,5 +76,28 @@ class listParser(parser):
 
     def length(self):
         return self.no_reqs
-    
-    
+
+
+
+class allParser(parser):
+    def __init__(self, f_name):
+        parser.__init__(self,f_name)
+
+    def open(self):
+        self.ifile = gzip.open(self.file, "rb")
+        l = self.ifile.readline()
+
+    def readline(self):
+        l = self.ifile.readline().decode("utf-8")
+        l = l.strip().split(" ")
+
+        tm = int(l[0])
+        obj = int(l[1])
+        sz = int(float(l[2]))
+        tc = int(l[3])
+        obj = str(obj) + ":" + str(tc)
+
+        return obj, sz, tm
+        
+
+        

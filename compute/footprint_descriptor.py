@@ -107,7 +107,6 @@ class cache:
             print tmp.obj_id, tmp.s
             tmp, s = tmp.findNext()
 
-
     def uniq_bytes(self, n):
         tmp = self.curr
         ubytes = 0
@@ -151,9 +150,6 @@ class cache:
                 self.prev_rid = self.root.id
                 
             self.curr = n
-
-            if self.root.s > 0.51*TB:
-                print("Root size is greater than 10TB ", o, tm)
 
             
         else:
@@ -208,7 +204,7 @@ else:
     parser.open()
     
 
-lru = cache(0.5*TB)
+lru = cache(10*TB)
 initial_objects = list()
 initial_times = {}
 
@@ -289,7 +285,7 @@ lru.initialize(initial_objects, obj_sizes, initial_times)
 i = 0
 line_count = 0
 #max_len = 200000000
-max_len = 20000000
+max_len = 100000000
 #max_len = 3000
 start_tm = 0
 total_bytes_req = 0

@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import random
 
 root = None
 
@@ -165,8 +166,7 @@ class node:
 
         while p != None:
             p.s = p.s - weight
-            p = p.parent        
-        
+            p = p.parent                
 
         p = self.parent
         if p.s == 0:
@@ -298,6 +298,15 @@ class node:
             sd_rem = sd_rem - (c.s * c.b)
             
         return n
+
+    def delete_random_node(self, debug):
+        if len(self.children) == 0:
+            self.delete_node(debug)
+            return self.s, self.obj_id
+        else:
+            r = random.randint(0, len(self.children)-1)        
+            sz, obj_id = self.children[r].delete_random_node(debug)
+            return sz, obj_id
         
     def add_child_first_pos(self, n, debug):
         self.children.insert(0, n)

@@ -19,7 +19,7 @@ def req_sz_dst(reqs, sizes):
 f = open(dir + "/out_trace_" + str(type) + ".txt", "r")
 reqs = f.readline()
 reqs = reqs.strip().split(",")[:-1]
-#reqs = reqs[50000000:]
+reqs = reqs[100000000:]
 reqs = [int(x) for x in reqs]
 f.close()
 
@@ -32,25 +32,34 @@ plot_dict(constructed, "constructed")
 
 
 ## For the original trace
-# input = binaryParser(dir + "/akamai2.bin")
-# input.open()
-# sizes = defaultdict()
-# reqs = []
-# while True:
-#     try:
-#         r, sz, t = input.readline()
-#     except:
-#         break
+#input = binaryParser(dir + "/akamai1.bin")
+#input.open()
+input = allParser(dir + "/all.gz")
+input.open()
+sizes = defaultdict()
+reqs = []
+i = 0
+while True:
+    i += 1
+    try:
+        r, sz, t = input.readline()
+    except:
+        break
         
-#     if r%8 != 0:
-#         continue
-#     sizes[r] = int(sz)/1000
-#     reqs.append(r)
-# original = req_sz_dst(reqs, sizes)
-# plot_dict(original, "original")
+    # if r%8 != 0:
+    #     continue
+    sizes[r] = int(sz)/1000
+    reqs.append(r)
+
+    if i > 100000000:
+        break
+    
+original = req_sz_dst(reqs, sizes)
+plot_dict(original, "original")
 plt.legend()
 plt.grid()
 plt.xlabel("sizes")
+plt.xscale("log")
 plt.ylabel("CDF")
 plt.savefig(dir + "/req_sz_" + str(type) + ".png")
 

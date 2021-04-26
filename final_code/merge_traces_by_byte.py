@@ -35,7 +35,7 @@ l = f1.readline()
 l = l.strip().split(" ")
 time_delta = int(l[3]) - int(l[2])
 br1 = int(float(l[1])/time_delta)
-br1 = float(br1)*10
+br1 = float(br1)
 f1.close()
 
 f2 = open("results/" + str(dir) + "/footprint_desc_" + str(tc2) + ".txt")
@@ -43,7 +43,7 @@ l = f2.readline()
 l = l.strip().split(" ")
 time_delta = int(l[3]) - int(l[2])
 br2 = int(float(l[1])/time_delta)
-br2 = float(br2)*10
+br2 = float(br2)
 f2.close()
 
 print(br1, br2)
@@ -85,7 +85,7 @@ while True:
             b2 += int(sizes2[int(t2[i2])])
             i2 += 1
 
-        random.shuffle(all_reqs)
+        #random.shuffle(all_reqs)
         for m in all_reqs:
             f.write(str(m[0]) + " " + str(m[1]) + " " + str(m[2]) + "\n")
             

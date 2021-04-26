@@ -38,10 +38,8 @@ if __name__ == "__main__":
     elif w_dir == "sm":
         MAX_SD = min(2.8*TB, MAX_SD)
     else:
-        MAX_SD = min(10*TB, MAX_SD)
-        
-
-        
+        MAX_SD = 10*TB
+                
     log_file = open("results/" + w_dir + "/log_file_" + str(tc) + ".txt", "w")
     log_file.flush()
 
@@ -151,7 +149,7 @@ if __name__ == "__main__":
             while root.s < MAX_SD:
 
                 if (total_objects + 1) % (70*MIL) == 0:
-                    sizes_n = sz_dst.sample_keys(50*MIL)
+                    sizes_n = sz_dst.sample_keys(70*MIL)
                     sizes.extend(sizes_n)
                 
                 total_objects += 1

@@ -25,88 +25,53 @@ if __name__ == "__main__":
     log_file = open("results/" + w_dir + "/log_file.txt", "w")
     log_file.flush()
 
+    MAX_SD = 0
+    ## get maximum stack distance
+    f = open("results/" + w_dir + "/popularity_desc_all.txt", "r")
+    for l in f:
+        l = l.strip().split(" ")
+        sd = int(float(l[1]))
+        if sd > MAX_SD:
+            MAX_SD = sd
+    f.close()
 
-    # ### Assign popularities and sz based on the stack distance distribution
-    # total_sz = 0
-    # sizes = []
-    # popularities = []
-    # total_objects = 0
-    # no_objects = 0
+    if w_dir == "tc":
+        MAX_SD = 1.5*TB
+    elif w_dir == "sm":
+        MAX_SD = 2.8*TB
+    else:
+        MAX_SD = 10*TB
 
-    # ## Sampling distributions
-    # #fd_sample_opp = joint_dst("results/" + w_dir + "/pop_sd_0.txt", True, 0, 2)
-    # #pop_sz = pop_sz_dst("results/" + w_dir + "/joint_dst_0.txt")
-    # pop_dst = pop("results/" + w_dir + "/joint_dst_0.txt", 0, 100*MIL)
-    # pr_one = pop_dst.getPr(4)
-    # print(pr_one)
+
     
-    # asdf
-    # ## Do it for 50 million objects
-    # for i in range(50*MIL):
-
-    #     if np.random.random() < pr_one:
-    #         pp = 1
-    #     else:
-    #         pp = fd_sample_opp.sample(total_sz)
-
-    #     sz = pop_sz.sample(pp)
-    #     total_sz += sz
-    #     sizes.append(sz)
-    #     popularities.append(pp)
-        
-    #     if total_sz < 10*TB:
-    #         total_objects += 1
-
-    #     no_objects += 1
-
-    #     if no_objects % 10000 == 0:
-    #         print("No objects : ", no_objects)
-
-        
-    ## Assign popularities and sizes to each object from the joint distribution
+    # ### Assign popularities and sz based on the stack distance distribution
+    total_sz = 0
+    sizes = []
     total_objects = 0
     no_objects = 0
-    popularities = []
-    req_count = []
-    sizes = []
-    f = open("results/" + w_dir + "/cache_state_0_8.txt", "r")    
-    total_sz = 0
-    for l in f:
-        l = l.strip().split(",")
-        sz = float(l[2])
-        p  = int(l[1])
-        popularities.append(p)
-        sizes.append(sz)
-        req_count.append(int(l[3]))
-        total_objects += 1
-        no_objects += 1
-        total_sz += sz
-        
-    pop_dst = pop("results/" + w_dir + "/joint_dst_0.txt", 0, MIL)
-    obj_left = 50*MIL - len(popularities)
-    popularities.extend(pop_dst.sample_popularities(obj_left))
-        
-    ## Assign sizes based on popularities
-    pop_sz = pop_sz_dst("results/" + w_dir + "/joint_dst_0.txt")
-    i = len(sizes)
-    while total_sz < 10 * TB:
-        p = popularities[i]
-        sz = pop_sz.sample(p)
-        sizes.append(sz)        
-        total_sz += sizes[i]
-        total_objects += 1
-        no_objects    += 1
-        i += 1
 
-        if total_objects % 100000 == 0:
-            print("Total objects : ", total_objects)
-                           
-    while no_objects < 50*MIL:
-        p = popularities[i]
-        sz = pop_sz.sample(p)
-        sizes.append(sz)        
+    ## Sampling distributions
+    pop_dst = pop("results/" + w_dir + "/joint_dst_all.txt", 1, 100*MIL)
+    popularities = pop_dst.sample_popularities(50*MIL)
+    pop_sz = pop_sz_dst("results/" + w_dir + "/joint_dst_all.txt")
+
+    ## Do it for 50 million objects
+    for i in range(50*MIL):        
+
+        pp = popularities[i]
+        sz = pop_sz.sample(pp)
+        total_sz += sz
+        sizes.append(sz)
+        
+        if total_sz < MAX_SD:
+            total_objects += 1
+
         no_objects += 1
-        i += 1
+
+        if no_objects % 10000 == 0:
+            print("No objects : ", no_objects)
+
+
             
     debug = open("results/" + w_dir + "/debug.txt", "w")
 
@@ -130,7 +95,7 @@ if __name__ == "__main__":
     no_desc = 0
     fail = 0
 
-    fd_sample = joint_dst("results/" + w_dir + "/byte_popularity_sd_0.txt", False, 2)
+    fd_sample = joint_dst("results/" + w_dir + "/popularity_desc_all.txt", False, 2)
     sampled_fds = []
     sampled_sds_pop = defaultdict(list)
     result_fds = []
@@ -141,7 +106,8 @@ if __name__ == "__main__":
     sz_removed = 0
     evicted_ = 0
 
-    req_count.extend([0] * (25*total_objects))
+    req_count = [0] * (25*total_objects)
+    #req_count.extend([0] * (25*total_objects))
     
     while curr != None and i <= t_len:
 
@@ -150,7 +116,7 @@ if __name__ == "__main__":
         
         if pp > 1:
             sd = fd_sample.sample(pp)
-            if sd > total_sz:
+            if sd > MAX_SD:
                 continue
         else:
             sd = 0
@@ -174,9 +140,9 @@ if __name__ == "__main__":
             sz_removed += curr.s
             evicted_ += 1
 
-            sampled_fds.append(10*TB + 200000)
+            sampled_fds.append(MAX_SD + 200000)
             
-            while root.s < 10*TB:
+            while root.s < MAX_SD:
 
                 if (total_objects + 1) % (50*MIL) == 0:
                     popularities_n = pop_dst.sample_popularities(50*MIL)
@@ -236,29 +202,29 @@ if __name__ == "__main__":
 
         
     ## Write sampled sizes to disk    
-    f = open("results/" + w_dir + "/sampled_sizes_pop_init_byte.txt", "w")
+    f = open("results/" + w_dir + "/sampled_sizes_pop_all_byte.txt", "w")
     f.write(",".join([str(x) for x in sizes]))
     f.close()
 
     ## Write sampled popularities to disk
-    f = open("results/" + w_dir + "/sampled_pop_pop_init_byte.txt", "w")
+    f = open("results/" + w_dir + "/sampled_pop_pop_all_byte.txt", "w")
     f.write(",".join([str(x) for x in popularities]))
     f.close()
     
     # ## Write stats to disk
-    f = open("results/" + w_dir + "/sampled_fds_pop_init_byte.txt", "w")
+    f = open("results/" + w_dir + "/sampled_fds_pop_all_byte.txt", "w")
     for i in range(len(sampled_fds)):
         f.write(str(sampled_fds[i]) + ",")
     f.close()
 
     # ## Write the trace to dist
-    f = open("results/" + w_dir + "/out_trace_pop_init_byte.txt", "w")
+    f = open("results/" + w_dir + "/out_trace_pop_all_byte.txt", "w")
     for i in range(len(c_trace)):
         f.write(str(c_trace[i]) + ",")
     f.close()    
 
     ## Write request count stats to disk
-    f = open("results/" + w_dir + "/req_count_pop_init_byte.txt", "w")
+    f = open("results/" + w_dir + "/req_count_pop_all_byte.txt", "w")
     for i in range(len(req_count)):
         f.write(str(req_count[i]) + ",")
     f.close()    
