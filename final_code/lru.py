@@ -22,10 +22,11 @@ class LRUCache:
     # don't find the key in out dict / cache. 
     # And also move the key to the end 
     # to show that it was recently used. 
-    def get(self, key): 
+    def get(self, key, eviction_age, r_count): 
         if key not in self.cache: 
             return -1
-        else: 
+        else:
+            eviction_age[key][-1] = r_count
             self.cache.move_to_end(key) 
             return self.cache[key] 
   

@@ -23,6 +23,12 @@ if __name__ == "__main__":
     w_dir = sys.argv[2]
     tc = sys.argv[3]
 
+    ## colon seperated
+    all_tcs = sys.argv[4]
+
+    ## colon seperated
+    ratios = sys.argv[5]
+    
     MAX_SD = 0
     ## get maximum stack distance
     f = open("results/" + w_dir + "/calculus_footprint_desc_" + str(tc) +".txt", "r")
@@ -42,12 +48,49 @@ if __name__ == "__main__":
                 
     log_file = open("results/" + w_dir + "/log_file_" + str(tc) + ".txt", "w")
     log_file.flush()
+    
+    sz_dsts = []
+    tcs = all_tcs.split(":")
+    ratios = ratios.split(":")
+    ratios = [int(x) for x in ratios]
+    fnl_ratios = []
+    sz_ratios = []
+    def find_uniqrate(f):
+        urate = 0
+        l = f.readline()
+        for l in f:
+            l = l.strip().split(" ")
+            iat = int(l[0])
+            sd  = int(l[1])
+            rt = float(sd)/(iat + 100)
+            pr = float(l[2])
+            urate += pr * rt
+        return urate    
 
-    sz_dst = pop_opp("results/" + w_dir + "/iat_sz_" + str(tc) + ".txt", 0 , TB)
-    sizes = sz_dst.sample_keys(70*MIL)
-
-    print("done sampling sizes ")
+    for i in range(len(tcs)):
+        f = open("results/" + w_dir + "/footprint_desc_" + tcs[i] + ".txt", "r")        
+        uniq_bytes = 10000 * find_uniqrate(f)        
+        sz_dst = pop_opp("results/" + w_dir + "/iat_sz_" + str(tcs[i]) + ".txt", 0 , TB)
+        sz_dsts.append(sz_dst)
+        total_sz = 0
+        no_objects = 0
+        while total_sz < uniq_bytes:
+            total_sz += sz_dst.sample_keys(1)[0]
+            no_objects += 1
+        fnl_ratios.append(ratios[i]*no_objects)
+    sum_ratios = sum(fnl_ratios)
+    fnl_ratios = [float(x)/sum_ratios for x in fnl_ratios]
         
+    total_sz = 0 
+    n_sizes = []
+    sizes = []
+    for i in range(len(tcs)-1):
+        n_sizes.extend(sz_dsts[i].sample_keys(int(fnl_ratios[i]*70*MIL)))
+    n_sizes.extend(sz_dsts[i+1].sample_keys(int(70*MIL - len(n_sizes))))
+    sizes.extend(n_sizes)                   
+
+    print("done sampling sizes ", len(sizes))
+    
     total_sz   = 0
     total_objects = 0
     i = 0
@@ -56,10 +99,9 @@ if __name__ == "__main__":
         total_objects += 1
         if total_objects % 100000 == 0:
             print(total_objects, total_sz)
-        
-        
+
     print("total objects : ", total_objects)
-        
+    
     debug = open("results/" + w_dir + "/debug_" + str(tc) + ".txt", "w")
 
     ## generate random trace
@@ -149,8 +191,12 @@ if __name__ == "__main__":
             while root.s < MAX_SD:
 
                 if (total_objects + 1) % (70*MIL) == 0:
-                    sizes_n = sz_dst.sample_keys(70*MIL)
-                    sizes.extend(sizes_n)
+                    
+                    n_sizes = []
+                    for ij in range(len(tcs)-1):
+                        n_sizes.extend(sz_dsts[ij].sample_keys(int(fnl_ratios[i]*70*MIL)))
+                    n_sizes.extend(sz_dsts[ij+1].sample_keys(int(70*MIL - len(n_sizes))))
+                    sizes.extend(n_sizes)
                 
                 total_objects += 1
                 sz = sizes[total_objects]

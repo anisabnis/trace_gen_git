@@ -99,24 +99,24 @@ for cnt in range(1):
                 byte_hits_fifo += obj_sz
 
         # ## Make reqest to RANDOM
-        if i < 50000:
-            if r not in check_objs:
-                check_objs[r] = 1
-                initial_objs.append(r)
-                initial_sizes[r] = obj_sz
-                initial_tms[r] = 0
-        elif initialized == False:
-            rnd_c.initialize(initial_objs, initial_sizes, initial_tms)
-            initialized = True
-        else:
-            sd, tm = rnd_c.insert(r, obj_sz, 0)
-            if sd != -1:
-                if i > ignore:
-                    obj_hits_rnd += 1
-                    byte_hits_rnd += obj_sz
+        # if i < 50000:
+        #     if r not in check_objs:
+        #         check_objs[r] = 1
+        #         initial_objs.append(r)
+        #         initial_sizes[r] = obj_sz
+        #         initial_tms[r] = 0
+        # elif initialized == False:
+        #     rnd_c.initialize(initial_objs, initial_sizes, initial_tms)
+        #     initialized = True
+        # else:
+        #     sd, tm = rnd_c.insert(r, obj_sz, 0)
+        #     if sd != -1:
+        #         if i > ignore:
+        #             obj_hits_rnd += 1
+        #             byte_hits_rnd += obj_sz
                                 
         ## Make request to LRU
-        if lru_c.get(r) == -1:
+        if lru_c.get(r, eviction_age, i) == -1:
             lru_c.put(r, obj_sz, eviction_age, inner_lines)
         else:
             #if overall_reqs > 1000000:
@@ -138,30 +138,29 @@ for cnt in range(1):
             byte_hits_rnd = 0        
 
             
-        #if inner_lines > 200000000:
-        #    break
+        if inner_lines > 200000000:
+            break
 
 f.close()
 
 
-# age_dst = []
-# ## Parse eviction age
-# for obj in eviction_age:
-#     times = eviction_age[obj]
+age_dst = []
+## Parse eviction age
+for obj in eviction_age:
+    times = eviction_age[obj]
 
-#     for i in range(int(len(times)/2)):
-#         enter = times[2*i]
-#         try:
-#             leave = times[2*i + 1]
-#         except:
-#             break
+    for i in range(int(len(times)/2)):
+        enter = times[2*i]
+        try:
+            leave = times[2*i + 1]
+        except:
+            break
 
-#     age_dst.append(leave - enter)
+    age_dst.append(leave - enter)
 
-
-# f = open("results/" + str(tc) + "/age_distribution_original.txt", "w")
-# f.write(",".join([str(x) for x in age_dst]))
-# f.close()
+f = open("results/" + str(tc) + "/age_distribution_original.txt", "w")
+f.write(",".join([str(x) for x in age_dst]))
+f.close()
 
 
 # print("number of objects : ", len(objects))

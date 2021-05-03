@@ -52,9 +52,12 @@ class euParser(parser):
         l = l.strip().split(" ")
 
         tm = int(l[0])
-        obj = int(l[1])
+        obj = str(l[1]) + ":" + str(l[2])
         sz = int(float(l[4]))
 
+        if sz <= 0:
+            sz = 1
+        
         return obj, sz, tm
 
 

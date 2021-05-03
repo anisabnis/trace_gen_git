@@ -21,7 +21,7 @@ class joint_dst:
             key2 = int(float(l[1]))
 
             ## remember to change this
-            val  = float(l[3])
+            val  = float(l[2])
 
             if opp == False:
                 if key1 >= lowerlimit1 and key2 >= lowerlimit2:
@@ -490,7 +490,7 @@ class byte_sd:
             self.zero_sds = 0
             
     def sample_keys(self, obj_sizes, sampled_sds, n):
-        self.update(obj_sizes, sampled_sds)
+        #self.update(obj_sizes, sampled_sds)
         return choices(self.sd_keys, weights = self.sd_vals, k = n)
     
 

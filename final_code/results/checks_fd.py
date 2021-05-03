@@ -19,12 +19,12 @@ def plot_dict(x, ohp, label="-"):
     for k in keys:
         vals.append(x[k])
 
-    keys.append(keys[-1] + 200000)    
+    # keys.append(keys[-1] + 200000)    
         
-    sum_vals = sum(vals)
-    vals = [float(y)/sum_vals for y in vals]
-    vals = [(1-ohp)*y for y in vals]
-    vals.append(ohp)
+    # sum_vals = sum(vals)
+    # vals = [float(y)/sum_vals for y in vals]
+    # vals = [(1-ohp)*y for y in vals]
+    # vals.append(ohp)
     
     vals = np.cumsum(vals)
     
@@ -40,13 +40,13 @@ def plot_list(x, ohp, label="-", maxlim=100*TB):
     plot_dict(a, ohp, label)
 
 
-def plot_orig():
-    f = open(d + "/byte_footprint_desc_all.txt", "r")
+def plot_orig(file_n):
+    f = open(d + file_n, "r")
     #f = open(d + "/fd_final.txt", "r")
     #f = open(d + "/fd_final.txt", "r")
     l = f.readline()
     l = l.strip().split(" ")
-    one_hits_pr = float(l[-1])/float(l[1])
+    one_hits_pr = float(l[-2])/float(l[0])
     prs = defaultdict(lambda : 0)
     #prs[25*TB + 200000] += one_hits_pr
 
@@ -105,4 +105,5 @@ plt.legend()
 plt.grid()
 plt.xlabel("FDs")
 plt.ylabel("CDF")
+plt.ylim(0,1)
 plt.savefig(d + "/byte_sampled_fds.png")
