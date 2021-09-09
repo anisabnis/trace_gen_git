@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     f = open("results/" + w_dir + "/footprint_desc_all.txt", "r")
     l = f.readline().strip().split(" ")
-    one_hit_pr = float(l[-1])/float(l[0])
+    one_hit_pr = float(l[-2])/float(l[0])
     f.close()
 
     fd_sample = pop_opp2("results/" + w_dir + "/footprint_desc_all.txt", 0, 1000*TB)
@@ -49,6 +49,12 @@ if __name__ == "__main__":
         
     print("total objects : ", total_objects)
 
+    popularities = []
+    pop_dst = pop("results/" + w_dir + "/joint_dst_all.txt", 0, MIL)
+    popularities = pop_dst.sample_popularities(50*MIL)
+    req_count = [0] * (50 * MIL)
+    
+    
     debug = open("results/" + w_dir + "/debug.txt", "w")
 
     ## generate random trace
@@ -82,7 +88,7 @@ if __name__ == "__main__":
     sz_added   = 0
     sz_removed = 0
     evicted_ = 0
-    
+
 
     while i <= t_len:
         
@@ -112,7 +118,11 @@ if __name__ == "__main__":
             if (total_objects + 1) % (50*MIL) == 0:
                 sizes_n = sz_dst.sample_keys(50*MIL)
                 sizes.extend(sizes_n)
+                popularities_n = pop_dst.sample_popularities(50*MIL)
+                popularities.extend(popularities_n)
+                req_count.extend([0] * (50 * MIL))
 
+                
             total_objects += 1
             sz = sizes[total_objects]
             sz_added += sz
@@ -141,9 +151,10 @@ if __name__ == "__main__":
         else:
 
             ## find the object at the distance
-            n = root.deleteAt(sd, debug)
+            n = root.deleteAtApprox(sd, popularities, req_count, 5, debug)            
             c_trace.append(n.obj_id)
-
+            req_count[n.obj_id] += 1            
+            
             ## insert at the top of the cache
             p_c = curr.parent
             root = p_c.add_child_first_pos(n, debug)
@@ -153,7 +164,7 @@ if __name__ == "__main__":
             
         
 
-        if i % 10001 == 0:
+        if i % 101 == 0:
             log_file.write("Trace computed : " +  str(i) + " " +  str(datetime.datetime.now()) +  " " + str(root.s) + " " + str(total_objects) + " fail : " + str(fail) + " sz added : " + str(sz_added) + " sz_removed : " + str(sz_removed) + "\n")
             print("Trace computed : " +  str(i) + " " +  str(datetime.datetime.now()) +  " " + str(root.s) + " " + str(total_objects) + " fail : " + str(fail) + " sz added : " + str(sz_added) + " sz_removed : " + str(sz_removed) + " evicted : " +  str(evicted_))
             log_file.flush()
@@ -177,4 +188,16 @@ if __name__ == "__main__":
     f = open("results/" + w_dir + "/out_trace_lrusm.txt", "w")
     for i in range(len(c_trace)):
         f.write(str(c_trace[i]) + ",")
+    f.close()    
+
+    # ## Write the trace to dist
+    f = open("results/" + w_dir + "/req_count_lrusm.txt", "w")
+    for i in range(len(req_count)):
+        f.write(str(req_count[i]) + ",")
+    f.close()    
+    
+    # ## Write the trace to dist
+    f = open("results/" + w_dir + "/popularities_lrusm.txt", "w")
+    for i in range(len(popularities)):
+        f.write(str(popularities[i]) + ",")
     f.close()    

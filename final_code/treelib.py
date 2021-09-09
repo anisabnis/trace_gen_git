@@ -1,3 +1,4 @@
+from numpy.random import choice
 import numpy as np
 import sys
 import random
@@ -169,12 +170,12 @@ class node:
             p = p.parent                
 
         p = self.parent
+        
         if p.s == 0:
             p.delete_node(debug)
         
 
     def rebalance(self, debug):
-
         
         if self.is_root == True or self == None:
             ## if you create new root return new root
@@ -299,6 +300,51 @@ class node:
             
         return n
 
+
+    def dontDeleteAt(self, sd, debug):
+
+        if len(self.children) == 0:
+            return self
+            
+        sd_rem = sd
+        
+        for c in self.children:
+            if sd_rem < c.s:
+                n = c.dontDeleteAt(sd_rem, debug)
+                break
+            sd_rem = sd_rem - (c.s * c.b)
+            
+        return n
+
+    
+    def deleteAtApprox(self, sd, popularities, req_count, number_ele, debug):
+        curr = self.dontDeleteAt(sd, debug)
+        max_node = curr
+        req_nodes = []
+        pps = []
+        max_diff = popularities[curr.obj_id] - req_count[curr.obj_id]
+        foundCandidate = False
+        
+        while True:
+            diff = popularities[curr.obj_id] - req_count[curr.obj_id]
+            if  diff > 0:
+                req_nodes.append(curr)
+                if diff >= max_diff:
+                    max_diff = diff                
+                    max_node = curr
+                    
+            if len(req_nodes) >= number_ele:
+                break
+
+            curr, s = curr.findNext()
+                
+        #sum_pps = sum(pps)
+        #pps = [float(p)/sum_pps for p in pps]
+        #n = choice(req_nodes, 1, p=pps)
+        max_node.delete_node(debug)
+        return max_node
+        
+
     def delete_random_node(self, debug):
         if len(self.children) == 0:
             self.delete_node(debug)
@@ -306,6 +352,14 @@ class node:
         else:
             r = random.randint(0, len(self.children)-1)        
             sz, obj_id = self.children[r].delete_random_node(debug)
+            return sz, obj_id
+
+    def delete_last_node(self, debug):
+        if len(self.children) == 0:
+            self.delete_node(debug)
+            return self.s, self.obj_id
+        else:
+            sz, obj_id = self.children[-1].delete_last_node(debug)
             return sz, obj_id
         
     def add_child_first_pos(self, n, debug):
@@ -319,6 +373,23 @@ class node:
         n.update_till_root()
 
         return self.rebalance(debug)
+
+    def add_child_last_pos(self, n, debug):
+        p = self
+        while len(p.children) > 0:
+            p = p.children[-1]
+        p = p.parent
+        p.children.append(n)
+        
+        i = 0
+        for c in p.children:
+            c.child_idx = i
+            i += 1
+
+        n.parent = p
+        n.update_till_root()
+            
+        return n.rebalance(debug)
     
     def set_b(self):
         self.b = 1
@@ -358,12 +429,78 @@ class node:
         return [n_node, 1]
 
 
+    def findPrevious(self):
+        curr_node = self
+        p_node = curr_node.parent
+
+        while curr_node.child_idx == 0:
+
+            curr_node = curr_node.parent
+            p_node = p_node.parent
+
+            if p_node == None:
+                return [None, 1]
+
+        n_node = p_node.children[curr_node.child_idx - 1]
+            
+        while len(n_node.children) > 0:
+            n_node = n_node.children[-1]
+            
+        if n_node.obj_id == "nl":
+            return [n_node, -1]
+
+        return [n_node, 1]
+
+
+    ## A function to swap self with n
+    def swap(self, n):
+
+        self.dimnish_till_root()
+        n.dimnish_till_root()
+        
+        n_cidx = n.child_idx
+        s_cidx = self.child_idx
+
+        s_parent = self.parent
+        n_parent = n.parent
+
+        n_parent.children[n_cidx] = self
+        s_parent.children[s_cidx] = n
+
+        self.parent = n_parent
+        n.parent = s_parent
+        n.child_idx = s_cidx
+        self.child_idx = n_cidx
+
+        n.update_till_root()
+        self.update_till_root()
+        
     def update_till_root(self):        
         val = self.s * self.b
-        
-        
+                
         p = self.parent
         while p != None:
             p.s += val
             p = p.parent
 
+    def dimnish_till_root(self):        
+        val = self.s * self.b
+                
+        p = self.parent
+        while p != None:
+            p.s -= val
+            p = p.parent
+
+
+class lirsnode(node):
+    def __init__(self, obj_id, size):
+        node.__init__(self, obj_id, size)
+        self.lir = False
+        
+    def setLIR(self):
+        self.lir = True
+
+    def unsetLIR(self):
+        self.lir = False
+               
+    

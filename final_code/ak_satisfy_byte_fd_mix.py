@@ -153,16 +153,13 @@ if __name__ == "__main__":
         k += 1                    
         end_object = False
         ## Introduce a new object
-        if sd < 0:
+        if sd < 0 or sd >= root.s:
             end_object = True
             sz_removed += curr.s
             evicted_ += 1
         else:
             sd = random.randint(sd, sd+200000)         
 
-        if sd >= root.s:
-            fail += 1
-            continue
             
         n  = node(curr.obj_id, curr.s)        
         n.set_b()

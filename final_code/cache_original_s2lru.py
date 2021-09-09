@@ -4,6 +4,7 @@ from fifo import *
 from util import *
 from parser import *
 from random_cache import *
+from lfu import *
 import random
 
 tc = sys.argv[1]
@@ -16,23 +17,17 @@ eviction_age = []
 
 obj_reqs = 0
 byte_reqs = 0
-obj_hits_fifo = 0
-byte_hits_fifo = 0
-obj_hits_lru = 0
-byte_hits_lru = 0
-obj_hits_rnd = 0
-byte_hits_rnd = 0
+obj_hits = 0
+byte_hits = 0
 
-fifo_c = FIFOCache(cache_size)
-lru_c = LRUCache(cache_size)
-rnd_c = RNDCache(cache_size)
+slru_c = SLRUCache(2, cache_size/2)
 
 sizes_real = defaultdict()
 
 if mod_u > 100:
-    f = open("results/" + str(tc) + "/simulations/original.stats_"  + str(cache_size) + ".txt", "w")
+    f = open("results/" + str(tc) + "/simulations/original_s2lru_"  + str(cache_size) + ".txt", "w")
 else:
-    f = open("results/" + str(tc) + "/simulations/original.stats_"  + str(cache_size) + "_" + str(mod_u) + ".txt", "w")
+    f = open("results/" + str(tc) + "/simulations/original_s2lru_"  + str(cache_size) + "_" + str(mod_u) + ".txt", "w")
 
 if tc == "w":
     input = binaryParser("results/" + str(tc) + "/akamai1.bin")
@@ -94,53 +89,22 @@ for cnt in range(1):
             obj_reqs += 1
             byte_reqs += obj_sz
 
-        ## Make reqest to fifo
-        if fifo_c.get(r) == -1:
-            fifo_c.put(r, obj_sz)
-        else:
-            #if overall_reqs > 1000000:
-            if i > ignore:
-                obj_hits_fifo += 1
-                byte_hits_fifo += obj_sz
-
-        # ## Make reqest to RANDOM
-        # if i < 50000:
-        #     if r not in check_objs:
-        #         check_objs[r] = 1
-        #         initial_objs.append(r)
-        #         initial_sizes[r] = obj_sz
-        #         initial_tms[r] = 0
-        # elif initialized == False:
-        #     rnd_c.initialize(initial_objs, initial_sizes, initial_tms)
-        #     initialized = True
-        # else:
-        #     sd, tm = rnd_c.insert(r, obj_sz, 0)
-        #     if sd != -1:
-        #         if i > ignore:
-        #             obj_hits_rnd += 1
-        #             byte_hits_rnd += obj_sz
-                                
-        ## Make request to LRU
-        if lru_c.get(r, total_bytes_req)[0] == -1:
-            lru_c.put(r, (obj_sz, total_bytes_req), eviction_age)
+        ## Make reqest to LFU
+        if slru_c.get(r) == -1:
+            slru_c.put(r, obj_sz)
         else:
             if i > ignore:
-                obj_hits_lru += 1
-                byte_hits_lru += obj_sz
-
+                obj_hits += 1
+                byte_hits += obj_sz
+            
         if overall_reqs % 10000 == 0 and i > ignore:# and overall_reqs > 1000000:
-            f.write(str(obj_reqs) + " " + str(byte_reqs) + " " + str(obj_hits_fifo) + " " + str(byte_hits_fifo) + " " + str(obj_hits_lru) + " " + str(byte_hits_lru) + " " + str(obj_hits_rnd) + " " + str(byte_hits_rnd) + "\n")
+            f.write(str(obj_reqs) + " " + str(byte_reqs) + " " + str(obj_hits) + " " + str(byte_hits))
             f.write("\n")
             f.flush()
             obj_reqs = 0
             byte_reqs = 0
-            obj_hits_fifo = 0
-            byte_hits_fifo = 0
-            obj_hits_lru = 0
-            byte_hits_lru = 0            
-            obj_hits_rnd = 0
-            byte_hits_rnd = 0        
-
+            obj_hits = 0
+            byte_hits = 0
             
         if inner_lines > 80000000:
             break
@@ -162,10 +126,10 @@ f.close()
 
 #     age_dst.append(leave - enter)
 
-f = open("results/" + str(tc) + "/age_distribution_original_" + str(css) +  ".txt", "w")
-f.write(str(sum(eviction_age)/(1000*len(eviction_age))))
-#f.write(",".join([str(x) for x in eviction_age]))
-f.close()
+# f = open("results/" + str(tc) + "/age_distribution_original_" + str(css) +  ".txt", "w")
+# f.write(str(sum(eviction_age)/(1000*len(eviction_age))))
+# #f.write(",".join([str(x) for x in eviction_age]))
+# f.close()
 
 
 # print("number of objects : ", len(objects))

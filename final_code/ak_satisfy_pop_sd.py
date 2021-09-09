@@ -150,18 +150,39 @@ if __name__ == "__main__":
 
     #req_count = [0] * (25*total_objects)
     req_count.extend([0] * (25*total_objects))
+
+
+    popularity_stackdistances = defaultdict(lambda : [])
+
     
     while curr != None and i <= t_len:
 
         ## Sample based on popularity
-        pp = popularities[curr.obj_id]        
+        # pp = popularities[curr.obj_id]        
         
+        # if pp > 1:
+        #     sd = fd_sample.sample(pp)
+        #     if sd > MAX_SD:
+        #         continue
+        # else:
+        #     sd = 0
+
+        if curr.obj_id not in popularity_stackdistances:
+            pp = popularities[curr.obj_id]
+            for count_pp in range(pp):
+                popularity_stackdistances[curr.obj_id].append(fd_sample.sample(pp))
+
+            popularity_stackdistances[curr.obj_id].sort(reverse=True)
+        
+
         if pp > 1:
-            sd = fd_sample.sample(pp)
+            sd = popularity_stackdistances[curr.obj_id].pop()
+            
             if sd > MAX_SD:
                 continue
         else:
             sd = 0
+            
         
         if sd >= root.s:
             fail += 1
@@ -181,6 +202,8 @@ if __name__ == "__main__":
         if req_count[curr.obj_id] >= popularities[curr.obj_id]:
             sz_removed += curr.s
             evicted_ += 1
+
+            del popularity_stackdistances[curr.obj_id]
 
             sampled_fds.append(MAX_SD + 200000)
             

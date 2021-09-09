@@ -438,11 +438,16 @@ class byte_sd:
         self.SD[-1] = float(bytes_miss)/bytes_req
         self.sd_index[-1] = 0
 
+        total_pr = 0
         for l in f:
             l = l.strip().split(" ")
             sd = int(l[1])
             self.SD[sd] += float(l[2])        
+            total_pr += float(l[2])
 
+        #self.SD[-1] = 1 - total_pr
+        #self.sd_index[-1] = 0
+            
         self.sd_keys = list(self.SD.keys())
         self.sd_keys.sort()
 
@@ -515,11 +520,16 @@ class object_sd:
         self.SD[-1] = float(bytes_miss)/bytes_req
         self.sd_index[-1] = 0
 
+        total_pr = 0
         for l in f:
             l = l.strip().split(" ")
             sd = int(l[1])
-            self.SD[sd] += float(l[2])        
+            self.SD[sd] += float(l[2])
+            #total_pr += float(l[2])
 
+        #self.SD[-1] = 1 - total_pr
+        #self.sd_index[-1] = 0
+            
         self.sd_keys = list(self.SD.keys())
         self.sd_keys.sort()
 

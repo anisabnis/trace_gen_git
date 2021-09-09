@@ -85,8 +85,9 @@ if __name__ == "__main__":
     n_sizes = []
     sizes = []
     for i in range(len(tcs)-1):
-        n_sizes.extend(sz_dsts[i].sample_keys(int(fnl_ratios[i]*70*MIL)))
+        n_sizes.extend(sz_dsts[i].sample_keys(int(fnl_ratios[i]*70*MIL)))    
     n_sizes.extend(sz_dsts[i+1].sample_keys(int(70*MIL - len(n_sizes))))
+    random.shuffle(n_sizes)
     sizes.extend(n_sizes)                   
 
     print("done sampling sizes ", len(sizes))
@@ -152,16 +153,14 @@ if __name__ == "__main__":
         k += 1                    
         end_object = False
         ## Introduce a new object
-        if sd < 0:
+        if sd < 0 or sd >= root.s:
             end_object = True
             sz_removed += curr.s
             evicted_ += 1
+            sd = -1
         else:
             sd = random.randint(sd, sd+200000)         
 
-        if sd >= root.s:
-            fail += 1
-            continue
             
         n  = node(curr.obj_id, curr.s)        
         n.set_b()
@@ -196,7 +195,8 @@ if __name__ == "__main__":
                     for ij in range(len(tcs)-1):
                         n_sizes.extend(sz_dsts[ij].sample_keys(int(fnl_ratios[i]*70*MIL)))
                     n_sizes.extend(sz_dsts[ij+1].sample_keys(int(70*MIL - len(n_sizes))))
-                    sizes.extend(n_sizes)
+                    random.shuffle(n_sizes)
+                    sizes.extend(n_sizes)                    
                 
                 total_objects += 1
                 sz = sizes[total_objects]

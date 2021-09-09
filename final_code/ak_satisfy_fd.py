@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     MAX_SD = 0
     ## get maximum stack distance
-    f = open("results/" + w_dir + "/calculus_footprint_desc_" + str(tc) +".txt", "r")
+    f = open("results/" + w_dir + "/footprint_desc_" + str(tc) +".txt", "r")
     for l in f:
         l = l.strip().split(" ")
         sd = int(float(l[1]))
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     no_desc = 0
     fail = 0
 
-    fd_sample = object_sd("results/" + w_dir + "/calculus_footprint_desc_" + str(tc) +".txt", 0, 1000*TB)
+    fd_sample = object_sd("results/" + w_dir + "/footprint_desc_" + str(tc) +".txt", 0, 1000*TB)
     stack_samples = fd_sample.sample_keys([], [], 1000)
     land_obj_sz = []
 
@@ -182,13 +182,13 @@ if __name__ == "__main__":
     f.write(",".join([str(x) for x in sizes]))
     f.close()
         
-    # ## Write stats to disk
+    # # ## Write stats to disk
     f = open("results/" + w_dir + "/sampled_fds_" + str(tc) + ".txt", "w")
     for i in range(len(sampled_fds)):
         f.write(str(sampled_fds[i]) + ",")
     f.close()
 
-    # ## Write the trace to dist
+    # # ## Write the trace to dist
     f = open("results/" + w_dir + "/out_trace_" + str(tc) + ".txt", "w")
     for i in range(len(c_trace)):
         f.write(str(c_trace[i]) + ",")

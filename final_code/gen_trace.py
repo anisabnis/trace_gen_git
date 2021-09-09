@@ -31,6 +31,39 @@ def gen_leaves(trace, sizes, items=None, initial_times=None):
     return trace_list, total_sz
 
 
+
+def gen_leaves_lirs(trace, sizes, items=None, initial_times=None):
+    # create a tree and return
+
+    total_sz = 0    
+    st_tree = defaultdict(list)
+
+    ## First create a level 0 trace
+    trace_list = []
+    seen_ele = defaultdict()
+
+    for i in range(len(trace)):
+        oid = trace[i]
+        n = lirsnode(oid, sizes[oid])
+        n.setLIR()
+        n.set_b()
+        
+        if items != None:
+            items[oid] = n
+            total_sz += sizes[oid]
+            if initial_times != None:                
+                n.last_access = initial_times[oid]
+        
+        trace_list.append(n)
+
+        if i%10000 == 0:
+            print("Parsed number of requests : ", i)
+
+    return trace_list, total_sz
+
+
+
+
 def generate_tree(trace_list):
 
     lvl = 0

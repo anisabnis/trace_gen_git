@@ -54,8 +54,9 @@ class euParser(parser):
         tm = int(l[0])
         obj = int(l[1])
         sz = int(float(l[4]))
-
-        return obj, sz, tm
+        tc = int(l[2])
+        
+        return obj, sz, tm, tc
 
 
 class listParser(parser):
@@ -97,7 +98,7 @@ class allParser(parser):
         tc = int(l[3])
         obj = str(obj) + ":" + str(tc)
 
-        return obj, sz, tm
+        return obj, sz, tm, tc
         
 
         

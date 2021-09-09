@@ -21,10 +21,12 @@ def plot_dict(x, ohp, label="-"):
 
     # keys.append(keys[-1] + 200000)    
         
-    # sum_vals = sum(vals)
-    # vals = [float(y)/sum_vals for y in vals]
+    sum_vals = sum(vals)
+    vals = [float(y)/sum_vals for y in vals]    
     # vals = [(1-ohp)*y for y in vals]
     # vals.append(ohp)
+    keys = keys[1:]
+    vals = vals[1:]
     
     vals = np.cumsum(vals)
     
@@ -39,9 +41,31 @@ def plot_list(x, ohp, label="-", maxlim=100*TB):
 
     plot_dict(a, ohp, label)
 
+def plot_dict_2(x, ohp, label="-"):
+    print("ohp : ", ohp)
+
+    #ohp = 0
+    
+    keys = list(x.keys())
+    keys.sort()
+
+    vals = []
+    for k in keys:
+        vals.append(x[k])
+
+    # keys.append(keys[-1] + 200000)    
+        
+    # vals = [(1-ohp)*y for y in vals]
+    # vals.append(ohp)
+    
+    vals = np.cumsum(vals)
+    
+    plt.plot(keys, vals, label=label)#, marker="^", markersize=3, markevery=500)
+
+    
 
 def plot_orig(file_n):
-    f = open(d + file_n, "r")
+    f = open(d + "/" + file_n, "r")
     #f = open(d + "/fd_final.txt", "r")
     #f = open(d + "/fd_final.txt", "r")
     l = f.readline()
@@ -63,27 +87,22 @@ def plot_orig(file_n):
             max_key = key
 
     #prs[-200000] += one_hits_pr
-    plot_dict(prs, one_hits_pr, "original")
+    plot_dict_2(prs, one_hits_pr, "original")
 
     print("total_pr : ", total_pr)
     return one_hits_pr, max_key
 
-one_hit_pr, max_key = plot_orig()
+one_hit_pr, max_key = plot_orig("calculus_footprint_desc_mix.txt")
+#one_hit_pr=0
 
-# print(max_key)
-# f = open(d + "/byte_sampled_fds.txt", "r")
-# l = f.readline()
-# l = l.strip().split(",")[:-1]
-# sampled_fds = [int(x) for x in l]
-# print(max(sampled_fds))
-# sampled_fds = [x for x in sampled_fds if x >= 0]
-# #sampled_fds = [-200000 if x == -1 else x for x in sampled_fds]
-# #len_miss = len([x for x in sampled_fds if x == -200000])
-
-# #print("one_hit_pr : ", float(len_miss)/len(sampled_fds))
-
-# #print(sampled_fds)
-# plot_list(sampled_fds, one_hit_pr, label="sampled")
+#print(max_key)
+f = open(d + "/sampled_fds_mix.txt", "r")
+l = f.readline()
+l = l.strip().split(",")[:-1]
+sampled_fds = [int(x) for x in l]
+print(max(sampled_fds))
+#sampled_fds = [x for x in sampled_fds if x >= 0]
+plot_list(sampled_fds, one_hit_pr, label="sampled")
 
 # f = open("v/footprint_desc_constructed.txt","r")
 # xs = []
@@ -106,4 +125,4 @@ plt.grid()
 plt.xlabel("FDs")
 plt.ylabel("CDF")
 plt.ylim(0,1)
-plt.savefig(d + "/byte_sampled_fds.png")
+plt.savefig(d + "/sampled_fds_mix.png")

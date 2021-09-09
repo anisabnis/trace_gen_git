@@ -7,13 +7,14 @@ from random_cache import *
 import random
 
 tc = sys.argv[1]
-cache_size = int(sys.argv[2]) * 1000000
+css = int(sys.argv[2])
+cache_size =  css * 1000000
 #ignore = int(sys.argv[3]) * 1000000
 ignore = 0
 typ = sys.argv[3]
 BR = sys.argv[4]
 
-eviction_age = defaultdict(lambda : [])
+eviction_age = []
 
 if BR == "r":
     f = open("results/" + str(tc) + "/out_trace_" + typ +".txt" , "r")
@@ -23,6 +24,8 @@ else:
 reqs = f.readline()
 reqs = reqs.strip().split(",")
 reqs = [int(r) for r in reqs if r != '']
+min_len = min(len(reqs), 10000000)
+reqs = reqs[:min_len]
 f.close()
 print("Len of trace : ", len(reqs))
 
@@ -64,12 +67,18 @@ initial_tms = {}
 initial_sizes = {}
 check_objs = {}
 initialized = False
+
+
+total_bytes_req = 0
+
 for r in reqs:
 
     i += 1
     r = int(r)
     obj_sz = int(sizes[r])
 
+    total_bytes_req += obj_sz
+    
     if i > ignore:
         overall_reqs += 1
         byte_reqs += obj_sz
@@ -108,8 +117,8 @@ for r in reqs:
 
 
     ## Make request to LRU
-    if lru_c.get(r, eviction_age, i) == -1:
-        lru_c.put(r, obj_sz, eviction_age, i)
+    if lru_c.get(r, total_bytes_req)[0] == -1:
+        lru_c.put(r, (obj_sz, total_bytes_req), eviction_age)
     else:
         if i > ignore:
             obj_hits_lru += 1
@@ -134,22 +143,23 @@ for r in reqs:
         
 f.close()
 
-age_dst = []
-## Parse eviction age
-for obj in eviction_age:
-    times = eviction_age[obj]
+# age_dst = []
+# ## Parse eviction age
+# for obj in eviction_age:
+#     times = eviction_age[obj]
 
-    for i in range(int(len(times)/2)):
-        enter = times[2*i]
-        try:
-            leave = times[2*i + 1]
-        except:
-            break
+#     for i in range(int(len(times)/2)):
+#         enter = times[2*i]
+#         try:
+#             leave = times[2*i + 1]
+#         except:
+#             break
 
-    age_dst.append(leave - enter)
+#     age_dst.append(leave - enter)
 
-f = open("results/" + str(tc) + "/age_distribution_generated.txt", "w")
-f.write(",".join([str(x) for x in age_dst]))
+f = open("results/" + str(tc) + "/age_distribution_generated_" + str(css) + ".txt", "w")
+#f.write(",".join([str(x) for x in eviction_age]))
+f.write(str(sum(eviction_age)/len(eviction_age)))
 f.close()
         
         
